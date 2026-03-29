@@ -97,5 +97,5 @@ async function loadReviews(clientId) {
 
 function logout() {
     localStorage.removeItem('wella_glow_user_id');
-    window.location.href = 'registration.html';
+    window.location.href = 'login.html';
 }
