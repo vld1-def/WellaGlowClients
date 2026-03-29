@@ -1,5 +1,15 @@
 // js/client-dashboard.js
 
+// Додай це на самий початок js/client-dashboard.js
+(function checkAuth() {
+    const userId = localStorage.getItem('wella_glow_user_id');
+    if (!userId) {
+        window.location.href = 'login.html'; // Відправляємо на вхід, якщо немає сесії
+    }
+})();
+
+// Далі твій звичайний код завантаження даних...
+
 document.addEventListener('DOMContentLoaded', async () => {
     const clientId = localStorage.getItem('wella_glow_user_id');
 
