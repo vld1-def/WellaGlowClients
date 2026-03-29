@@ -17,9 +17,37 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'login.html';
         return;
     }
+    if (userId) {
+        window.renderProfilePage();
+    }
     // При завантаженні сторінки одразу показуємо профіль
     window.renderProfilePage();
 });
+
+// --- 1. ФУНКЦІЯ ПЕРЕМИКАННЯ АКТИВНОГО МЕНЮ ---
+window.updateSidebar = function(activeId) {
+    const links = {
+        'profile': document.getElementById('nav-profile'),
+        'booking': document.getElementById('nav-booking')
+    };
+    
+    // Скидаємо всі стилі
+    Object.values(links).forEach(link => {
+        if (link) {
+            link.classList.remove('text-white', 'border-l-2', 'border-rose-500', 'bg-rose-500/5', 'font-bold');
+            link.classList.add('text-zinc-400');
+            link.querySelector('i').classList.remove('text-rose-500');
+        }
+    });
+
+    // Встановлюємо активний стиль
+    const active = links[activeId];
+    if (active) {
+        active.classList.add('text-white', 'border-l-2', 'border-rose-500', 'bg-rose-500/5', 'font-bold');
+        active.classList.remove('text-zinc-400');
+        active.querySelector('i').classList.add('text-rose-500');
+    }
+};
 
 async function loadHistory(clientId) {
     const { data: history } = await window.db
@@ -231,104 +259,148 @@ function logout() {
     localStorage.removeItem('wella_glow_user_id');
     window.location.href = 'login.html';
 }
-// Функція для відображення сторінки запису
-async function renderBookingPage() {
+// --- 2. ОНОВЛЕНИЙ РЕНДЕР СТОРІНКИ ЗАПИСУ ---
+window.renderBookingPage = async function() {
+    window.updateSidebar('booking'); // Робимо меню активним
     const main = document.querySelector('main');
     
-    // 1. Отримуємо список майстрів з бази для вибору
     const { data: masters } = await window.db.from('staff').select('*').eq('is_active', true);
 
     main.innerHTML = `
         <header class="flex justify-between items-center mb-10">
             <div>
-                <h2 class="text-2xl font-extrabold text-white tracking-tight leading-none">Бронювання візиту</h2>
-                <p class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest mt-2 leading-none">Оберіть ідеальний час для вашого сяйва</p>
+                <h2 class="text-2xl font-extrabold text-white tracking-tight">Бронювання візиту</h2>
+                <p class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest mt-2">Оберіть свого майстра та час</p>
             </div>
-            <button onclick="location.reload()" class="text-[10px] text-zinc-500 hover:text-white transition font-black uppercase tracking-widest">
-                <i class="fa-solid fa-xmark mr-1"></i> Скасувати
+            <button onclick="window.renderProfilePage()" class="text-[10px] text-zinc-500 hover:text-white transition font-black uppercase tracking-widest">
+                <i class="fa-solid fa-xmark mr-1"></i> Назад
             </button>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2 space-y-6">
-                <!-- Крок 1: Послуга -->
+                
+                <!-- КРОК 1: ПОСЛУГА -->
                 <div class="glass-panel p-6 rounded-[2rem]">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-6 leading-none text-rose-500">1. Оберіть послугу</h4>
-                    <select id="selectService" class="input-dark w-full">
+                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-6 text-rose-500">1. Оберіть послугу</h4>
+                    <select id="selectService" class="input-dark w-full" onchange="window.updateSummary()">
                         <option value="0" data-price="0">Оберіть процедуру...</option>
                         <option value="Складне фарбування" data-price="2800">Складне фарбування (Wella) — ₴2,800</option>
                         <option value="Стрижка та укладка" data-price="850">Стрижка та укладка — ₴850</option>
-                        <option value="Манікюр Lux" data-price="1100">Манікюр + Покриття Lux — ₴1,100</option>
-                        <option value="Догляд WellaPlex" data-price="1200">Відновлення WellaPlex — ₴1,200</option>
+                        <option value="Манікюр Lux" data-price="1100">Манікюр + Покриття — ₴1,100</option>
                     </select>
                 </div>
 
-                <!-- Крок 2: Майстер -->
+                <!-- КРОК 2: МАЙСТЕР -->
                 <div class="glass-panel p-6 rounded-[2rem]">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-6 leading-none text-rose-500">2. Оберіть майстра</h4>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4" id="mastersGrid">
+                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-6 text-rose-500">2. Оберіть майстра</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                         ${masters?.map(m => `
-                            <div onclick="selectMaster(this, '${m.id}', '${m.name}')" class="master-selector border border-white/5 p-4 rounded-2xl bg-white/2 hover:border-rose-500/50 transition cursor-pointer text-center">
-                                <img src="https://ui-avatars.com/api/?name=${m.name.replace(' ','+')}&background=111113&color=fff" class="w-12 h-12 rounded-full mx-auto mb-3 border-2 border-white/5">
-                                <p class="text-xs font-bold text-white">${m.name}</p>
-                                <p class="text-[9px] text-zinc-500 uppercase mt-1">${m.role || 'Майстер'}</p>
+                            <div onclick="window.loadMasterAvailability(this, '${m.id}', '${m.name}')" class="master-selector border border-white/5 p-4 rounded-2xl bg-white/2 hover:border-rose-500/50 transition cursor-pointer text-center">
+                                <img src="https://ui-avatars.com/api/?name=${m.name.replace(' ','+')}&background=111113&color=fff" class="w-10 h-10 rounded-full mx-auto mb-2 border border-white/10">
+                                <p class="text-[11px] font-bold text-white">${m.name}</p>
+                                <p class="text-[8px] text-zinc-500 uppercase">${m.role || 'Майстер'}</p>
                             </div>
-                        `).join('') || '<p class="text-zinc-500 text-xs">Майстри завантажуються...</p>'}
+                        `).join('')}
                     </div>
                 </div>
 
-                <!-- Крок 3: Дата та Час -->
-                <div class="glass-panel p-6 rounded-[2rem]">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-6 leading-none text-rose-500">3. Дата та час</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <input type="date" id="bookDate" class="input-dark">
-                        <div class="grid grid-cols-3 gap-2" id="timeSlots">
-                            <button onclick="selectTime(this)" class="time-btn text-[10px] font-bold p-2 bg-white/5 rounded-lg border border-white/5 hover:border-rose-500 transition">10:00</button>
-                            <button onclick="selectTime(this)" class="time-btn text-[10px] font-bold p-2 bg-white/5 rounded-lg border border-white/5 hover:border-rose-500 transition">12:30</button>
-                            <button onclick="selectTime(this)" class="time-btn text-[10px] font-bold p-2 bg-white/5 rounded-lg border border-white/5 hover:border-rose-500 transition">15:00</button>
-                            <button onclick="selectTime(this)" class="time-btn text-[10px] font-bold p-2 bg-white/5 rounded-lg border border-white/5 hover:border-rose-500 transition">17:30</button>
-                        </div>
+                <!-- КРОК 3: КАЛЕНДАР (ДИНАМІЧНИЙ) -->
+                <div id="calendarSection" class="glass-panel p-6 rounded-[2rem] opacity-30 pointer-events-none transition-all duration-500">
+                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-6 text-rose-500">3. Доступні дати</h4>
+                    <div id="calendarGrid" class="grid grid-cols-7 gap-2 text-center">
+                        <!-- Дні завантажаться після вибору майстра -->
+                        <p class="col-span-7 text-[10px] text-zinc-600 uppercase font-bold py-4">Спершу оберіть майстра</p>
+                    </div>
+                    
+                    <h4 class="text-xs font-black text-white uppercase tracking-widest mt-8 mb-4 text-rose-500">Доступний час</h4>
+                    <div id="timeSlots" class="grid grid-cols-4 gap-2">
+                        <!-- Час завантажиться після вибору дати -->
                     </div>
                 </div>
             </div>
 
-            <!-- ПІДСУМОК -->
+            <!-- SUMMARY -->
             <div class="lg:col-span-1">
-                <div class="glass-panel p-8 rounded-[2.5rem] sticky top-10 border-t-4 border-t-rose-500 shadow-2xl">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 text-center">Ваше бронювання</h4>
-                    
-                    <div class="space-y-4 mb-10">
-                        <div class="flex justify-between text-xs font-medium">
-                            <span class="text-zinc-500">Послуга:</span>
-                            <span id="sumService" class="text-white font-bold">---</span>
-                        </div>
-                        <div class="flex justify-between text-xs font-medium">
-                            <span class="text-zinc-500">Майстер:</span>
-                            <span id="sumMaster" class="text-white font-bold">---</span>
-                        </div>
-                        <div class="flex justify-between text-xs font-medium">
-                            <span class="text-zinc-500">Дата:</span>
-                            <span id="sumDate" class="text-white font-bold">---</span>
-                        </div>
+                <div class="glass-panel p-8 rounded-[2.5rem] sticky top-10 border-t-4 border-t-rose-500">
+                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 text-center leading-none">Ваше бронювання</h4>
+                    <div class="space-y-4 mb-8">
+                        <div class="flex justify-between text-[11px]"><span class="text-zinc-500 font-bold uppercase">Послуга</span><span id="sumService" class="text-white font-black">---</span></div>
+                        <div class="flex justify-between text-[11px]"><span class="text-zinc-500 font-bold uppercase">Майстер</span><span id="sumMaster" class="text-white font-black">---</span></div>
+                        <div class="flex justify-between text-[11px]"><span class="text-zinc-500 font-bold uppercase">Дата</span><span id="sumDate" class="text-white font-black">---</span></div>
                         <div class="h-px bg-white/5 my-4"></div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm font-black text-white uppercase italic-none">До сплати:</span>
-                            <span id="sumPrice" class="text-2xl font-black text-emerald-400">₴0</span>
-                        </div>
+                        <div class="flex justify-between items-center"><span class="text-sm font-black text-white uppercase tracking-tighter">До сплати</span><span id="sumPrice" class="text-2xl font-black text-emerald-400">₴0</span></div>
                     </div>
-
-                    <button onclick="confirmBooking()" class="neo-gradient w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] text-white shadow-xl shadow-rose-500/10 hover:shadow-rose-500/20 transition-all active:scale-95">
-                        Підтвердити запис
-                    </button>
+                    <button onclick="window.confirmBooking()" class="neo-gradient w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-xl transition active:scale-95">Підтвердити запис</button>
                 </div>
             </div>
         </div>
     `;
+};
 
-    // Додаємо слухач для оновлення підсумку при виборі послуги
-    document.getElementById('selectService').addEventListener('change', updateSummary);
-    document.getElementById('bookDate').addEventListener('change', updateSummary);
+// --- 3. ЗАВАНТАЖЕННЯ ГРАФІКА МАЙСТРА ---
+window.loadMasterAvailability = async function(el, masterId, name) {
+    // Стиль для вибраного майстра
+    document.querySelectorAll('.master-selector').forEach(item => item.classList.remove('border-rose-500', 'bg-rose-500/10'));
+    el.classList.add('border-rose-500', 'bg-rose-500/10');
+    
+    window.selectedMasterId = masterId;
+    document.getElementById('sumMaster').innerText = name;
+
+    // Активуємо секцію календаря
+    const section = document.getElementById('calendarSection');
+    section.classList.remove('opacity-30', 'pointer-events-none');
+
+    // Отримуємо зміни майстра з таблиці staff_shifts (припускаємо, що така є)
+    // Якщо немає таблиці, можна просто дозволити всі дні крім вихідних
+    const { data: shifts } = await window.db.from('staff_shifts').select('shift_date').eq('staff_id', masterId);
+    const availableDates = shifts?.map(s => s.shift_date) || [];
+
+    renderCalendar(availableDates);
+};
+
+// --- 4. МАЛЮЄМО КАЛЕНДАР ---
+function renderCalendar(availableDates) {
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = '';
+    
+    const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
+    days.forEach(d => grid.innerHTML += `<div class="text-[9px] font-black text-zinc-600 uppercase mb-2">${d}</div>`);
+
+    const today = new Date();
+    // Генеруємо наступні 14 днів
+    for (let i = 0; i < 14; i++) {
+        const date = new Date();
+        date.setDate(today.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+        const isAvailable = availableDates.includes(dateStr);
+        
+        grid.innerHTML += `
+            <button 
+                onclick="window.selectDate(this, '${dateStr}')" 
+                class="calendar-day p-3 rounded-xl text-[11px] font-bold border border-white/5 transition
+                ${isAvailable ? 'bg-white/5 text-white hover:border-rose-500' : 'opacity-10 cursor-not-allowed'}"
+                ${!isAvailable ? 'disabled' : ''}>
+                ${date.getDate()}
+            </button>
+        `;
+    }
 }
+
+window.selectDate = function(el, date) {
+    document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('bg-rose-500', 'text-white'));
+    el.classList.add('bg-rose-500', 'text-white');
+    window.selectedDateValue = date;
+    
+    // Показуємо слоти часу (спрощено)
+    const timeGrid = document.getElementById('timeSlots');
+    const times = ['10:00', '12:00', '14:00', '16:00', '18:00'];
+    timeGrid.innerHTML = times.map(t => `
+        <button onclick="window.selectTime(this)" class="time-btn p-2 bg-white/5 rounded-lg border border-white/5 text-[10px] font-black hover:border-rose-500 transition">${t}</button>
+    `).join('');
+    
+    window.updateSummary();
+};
 
 // Допоміжні змінні для збереження вибору
 let selectedMasterId = null;
