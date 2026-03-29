@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wella Glow | Реєстрація</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;500;600;700;800&display=swap');
+        
+        :root {
+            --bg: #050505;
+            --card: #111113;
+            --accent: #f43f5e;
+        }
+
+        body { 
+            font-family: 'Manrope', sans-serif; 
+            background-color: var(--bg); 
+            color: #e2e8f0;
+            letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .glass-panel {
+            background: rgba(17, 17, 19, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .neo-gradient {
+            background: linear-gradient(135deg, #f43f5e 0%, #fb7185 100%);
+        }
+
+        .input-dark {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #e2e8f0;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 12px 16px;
+            border-radius: 12px;
+            outline: none;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .input-dark:focus {
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 20px rgba(244, 63, 94, 0.1);
+        }
+
+        /* Видалення курсиву */
+        i, span, p, h1, h2, h3, h4, label, button, a, input { font-style: normal !important; }
+
+        .benefit-item i {
+            color: var(--accent);
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="max-w-5xl w-full p-5 lg:p-10 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+        
+        <!-- ЛІВА ЧАСТИНА: БРЕНД ТА ПЕРЕВАГИ -->
+        <div class="hidden lg:block space-y-10 p-5">
+            <div>
+                <h1 class="text-4xl font-extrabold text-white tracking-tighter uppercase leading-none">Wella Glow</h1>
+                <p class="text-xs text-rose-500 font-bold tracking-[0.5em] uppercase mt-2">premium studio</p>
+            </div>
+
+            <div class="space-y-8">
+                <h2 class="text-3xl font-black text-white leading-tight italic-none">Приєднуйтесь до нашої Glow-спільноти</h2>
+                
+                <div class="space-y-5">
+                    <div class="benefit-item flex items-center gap-4">
+                        <div class="w-8 h-8 rounded-full bg-rose-500/10 flex items-center justify-center">
+                            <i class="fa-solid fa-gift"></i>
+                        </div>
+                        <p class="text-sm font-bold text-zinc-300 tracking-wide">500 вітальних бонусів на перший візит</p>
+                    </div>
+                    <div class="benefit-item flex items-center gap-4">
+                        <div class="w-8 h-8 rounded-full bg-rose-500/10 flex items-center justify-center">
+                            <i class="fa-solid fa-calendar-check"></i>
+                        </div>
+                        <p class="text-sm font-bold text-zinc-300 tracking-wide">Запис у 2 кліки та історія всіх процедур</p>
+                    </div>
+                    <div class="benefit-item flex items-center gap-4">
+                        <div class="w-8 h-8 rounded-full bg-rose-500/10 flex items-center justify-center">
+                            <i class="fa-solid fa-bell"></i>
+                        </div>
+                        <p class="text-sm font-bold text-zinc-300 tracking-wide">Персональні пропозиції та секретні акції</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-5">
+                <p class="text-xs text-zinc-600 font-bold uppercase tracking-widest leading-relaxed">
+                    Вже маєте акаунт? <a href="#" class="text-rose-500 hover:text-rose-400 transition">Увійти</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- ПРАВА ЧАСТИНА: ФОРМА РЕЄСТРАЦІЇ -->
+        <div class="glass-panel p-8 lg:p-12 rounded-[3rem] shadow-2xl relative overflow-hidden">
+            <!-- Декоративний блік -->
+            <div class="absolute -right-20 -top-20 w-64 h-64 bg-rose-500/5 rounded-full blur-3xl"></div>
+
+            <div class="mb-10 text-center lg:text-left leading-none">
+                <h3 class="text-2xl font-black text-white uppercase tracking-tighter">Створити профіль</h3>
+                <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-3 leading-none italic-none">Заповніть дані для доступу до кабінету</p>
+            </div>
+
+            <form class="space-y-5" autocomplete="off">
+                <div class="space-y-2">
+                    <label class="text-[9px] text-zinc-500 uppercase font-black ml-1 tracking-widest">Прізвище та Ім'я</label>
+                    <input type="text" id="clientName" placeholder="Олександра Коваль" class="input-dark">
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[9px] text-zinc-500 uppercase font-black ml-1 tracking-widest">Номер телефону</label>
+                    <input type="tel" id="clientPhone" placeholder="+38 (0__) ___ __ __" class="input-dark">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-[9px] text-zinc-500 uppercase font-black ml-1 tracking-widest leading-none">Дата народження</label>
+                        <input type="date" id="clientBday" class="input-dark">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[9px] text-zinc-500 uppercase font-black ml-1 tracking-widest leading-none">Стать</label>
+                        <select  id="clientGender" class="input-dark">
+                            <option>Жіноча</option>
+                            <option>Чоловіча</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="space-y-2 pt-2">
+                    <label class="text-[9px] text-zinc-500 uppercase font-black ml-1 tracking-widest">Придумати пароль</label>
+                    <div class="relative">
+                        <input type="password" id="clientPassword" placeholder="••••••••" class="input-dark">
+                        <button type="button" class="absolute right-4 top-3 text-zinc-600 hover:text-zinc-400 transition">
+                            <i class="fa-solid fa-eye-slash text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-6 space-y-4">
+                    <button type="submit" class="neo-gradient w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] text-white shadow-xl shadow-rose-500/10 hover:shadow-rose-500/20 transition-all active:scale-95">
+                        Зареєструватись
+                    </button>
+                    
+                    <div class="relative flex items-center justify-center py-2">
+                        <div class="absolute w-full h-px bg-white/5"></div>
+                        <span class="relative bg-[#111113] px-4 text-[8px] text-zinc-700 font-black uppercase tracking-widest">Або через</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <button class="flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition">
+                            <i class="fa-brands fa-google text-xs text-white"></i>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-white">Google</span>
+                        </button>
+                        <button class="flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition">
+                            <i class="fa-brands fa-apple text-sm text-white"></i>
+                            <span class="text-[9px] font-black uppercase tracking-widest text-white">Apple ID</span>
+                        </button>
+                    </div>
+                </div>
+
+                <p class="text-[8px] text-zinc-700 text-center uppercase font-bold tracking-tighter leading-relaxed px-4 italic-none">
+                    Реєструючись, ви погоджуєтесь з <a href="#" class="underline">умовами надання послуг</a> та <a href="#" class="underline">політикою конфіденційності</a>
+                </p>
+            </form>
+        </div>
+
+    </div>
+<!-- Правильне підключення для registration.html -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-init.js"></script>
+<script src="js/registration.js"></script> 
+<!-- Тут НЕ МАЄ БУТИ clients-base.js -->
+</body>
+</html>
