@@ -34,6 +34,10 @@
             background: linear-gradient(135deg, #f43f5e 0%, #fb7185 100%);
         }
 
+        .gold-gradient {
+            background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+        }
+
         .input-dark {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -46,7 +50,15 @@
             width: 100%;
         }
 
-        /* Видалення курсиву */
+        .status-badge {
+            font-size: 8px;
+            font-weight: 900;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 5px;
+            letter-spacing: 0.05em;
+        }
+
         i, span, p, h1, h2, h3, h4, label, button, input { font-style: normal !important; }
 
         ::-webkit-scrollbar { width: 4px; }
@@ -64,19 +76,17 @@
 
         <nav class="flex-1 px-4 space-y-6 mt-2 text-zinc-400">
             <a href="#" class="flex items-center gap-3 p-3 text-white border-l-2 border-rose-500 bg-rose-500/5 font-bold transition">
-                <i class="fa-solid fa-user-heart text-sm text-rose-500"></i> <span class="hidden lg:block text-xs uppercase tracking-widest">Мій профіль</span>
+                <i class="fa-solid fa-user-heart text-sm text-rose-500"></i> <span class="hidden lg:block text-xs">Мій профіль</span>
             </a>
-            <a href="booking.html" class="flex items-center gap-3 p-3 hover:text-white transition">
-                <i class="fa-solid fa-calendar-plus text-sm"></i> <span class="hidden lg:block text-xs uppercase tracking-widest">Записатись</span>
+            <a href="#" class="flex items-center gap-3 p-3 hover:text-white transition">
+                <i class="fa-solid fa-calendar-plus text-sm"></i> <span class="hidden lg:block text-xs">Записатись</span>
+            </a>
+            <a href="#" class="flex items-center gap-3 p-3 hover:text-white transition">
+                <i class="fa-solid fa-gift text-sm"></i> <span class="hidden lg:block text-xs">Бонуси</span>
             </a>
         </nav>
 
-        <div class="p-6 border-t border-white/5">
-            <button onclick="logout()" class="text-zinc-600 hover:text-rose-500 transition text-[10px] font-black uppercase tracking-widest w-full text-left flex items-center gap-3">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <span class="hidden lg:block">Вийти</span>
-            </button>
-        </div>
+        <button onclick="logout()" class="text-zinc-600 hover:text-rose-500 transition text-[10px] font-black uppercase tracking-widest">Вийти</button>
     </aside>
 
     <!-- MAIN -->
@@ -88,9 +98,9 @@
                 <h2 class="text-2xl font-extrabold text-white tracking-tight leading-none">Вітаємо, <span id="clientFirstName">...</span>! ✨</h2>
                 <p class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest mt-2 leading-none">Твій день для краси сьогодні</p>
             </div>
-            <div id="loyaltyStatus" class="px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                <span class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Статус: <span id="statusName">Завантаження...</span></span>
-            </div>
+            <button class="bg-white/5 p-2 rounded-xl text-zinc-400 hover:text-white transition">
+                <i class="fa-solid fa-gear"></i>
+            </button>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -98,24 +108,35 @@
             <!-- LEFT COLUMN: STATUS & BOOKING -->
             <div class="lg:col-span-1 space-y-6">
                 
-                <!-- БАЛАНС БОНУСІВ -->
-                <div class="glass-panel p-8 rounded-[2rem] relative overflow-hidden">
-                    <div class="absolute -right-10 -top-10 w-32 h-32 bg-rose-500/10 rounded-full blur-3xl"></div>
-                    <p class="text-[9px] text-zinc-500 uppercase font-black tracking-widest leading-none">Мій баланс</p>
-                    <h3 class="text-4xl font-black text-white mt-4"><span id="userBonuses">0</span> <span class="text-sm text-zinc-600 ml-1">балів</span></h3>
+                <!-- LOYALTY CARD -->
+                <div class="glass-panel p-6 rounded-[2rem] border-t-4 border-t-amber-500 relative overflow-hidden">
+                    <div class="absolute -right-10 -top-10 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl"></div>
+                    <div class="flex justify-between items-start mb-10">
+                        <div>
+                            <p class="text-[9px] text-zinc-500 uppercase font-black tracking-widest leading-none">Статус лояльності</p>
+                            <h3 id="statusName" class="text-xl font-black text-amber-500 mt-2 uppercase tracking-tighter leading-none">Завантаження...</h3>
+                        </div>
+                        <i class="fa-solid fa-crown text-amber-500"></i>
+                    </div>
                     
-                    <button onclick="location.href='booking.html'" class="neo-gradient w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-white mt-10 shadow-xl shadow-rose-500/10 transition active:scale-95">
-                        Новий запис
-                    </button>
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <p class="text-3xl font-black text-white leading-none"><span id="userBonuses">0</span> <span class="text-xs font-bold text-zinc-600 ml-1 italic-none">балів</span></p>
+                            <p class="text-[9px] text-zinc-500 mt-2 uppercase font-black leading-none">Знижка на послуги: 10%</p>
+                        </div>
+                        <div class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/5">
+                            <i class="fa-solid fa-qrcode text-zinc-400"></i>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- QUICK BOOKING (ПРИКЛАД) -->
+                <!-- QUICK BOOKING -->
                 <div class="glass-panel p-6 rounded-[2.5rem]">
                     <h4 class="text-xs font-black text-white uppercase tracking-widest mb-6 leading-none">Швидкий запис</h4>
                     <div class="space-y-4">
                         <div class="flex flex-col gap-2">
                             <label class="text-[8px] text-zinc-600 uppercase font-black ml-1">Оберіть послугу</label>
-                            <select id="quickService" class="input-dark">
+                            <select class="input-dark">
                                 <option>Складне фарбування</option>
                                 <option>Манікюр + Покриття</option>
                                 <option>Догляд за волоссям</option>
@@ -123,10 +144,10 @@
                         </div>
                         <div class="flex flex-col gap-2">
                             <label class="text-[8px] text-zinc-600 uppercase font-black ml-1">Бажана дата</label>
-                            <input type="date" id="quickDate" class="input-dark">
+                            <input type="date" class="input-dark">
                         </div>
-                        <button class="w-full py-3 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-white/5 transition">
-                            Перевірити вільний час
+                        <button class="neo-gradient w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-white shadow-xl shadow-rose-500/10 mt-2 transition active:scale-95">
+                            Забронювати візит
                         </button>
                     </div>
                 </div>
@@ -135,11 +156,11 @@
             <!-- RIGHT COLUMN: HISTORY & REVIEWS -->
             <div class="lg:col-span-2 space-y-8">
                 
-                <!-- НАЙБЛИЖЧИЙ ЗАПИС (Динамічний) -->
-                <div id="nextAppointmentBox" class="hidden p-6 rounded-[2.5rem] bg-rose-500/5 border border-rose-500/20 shadow-lg shadow-rose-500/5">
+                <!-- UPCOMING APPOINTMENT -->
+                <div id="nextAppointmentBox" class="hidden p-6 rounded-[2.5rem] bg-rose-500/5 border border-rose-500/20">
                     <div class="flex justify-between items-center mb-4">
-                        <h4 class="text-xs font-black text-rose-500 uppercase tracking-widest leading-none">Найближчий візит</h4>
-                        <span class="status-badge bg-rose-500 text-white px-2 py-1 rounded text-[8px] font-black uppercase">Підтверджено</span>
+                        <h4 class="text-xs font-black text-rose-500 uppercase tracking-widest leading-none">Найближчий запис</h4>
+                        <span class="status-badge bg-rose-500 text-white">Підтверджено</span>
                     </div>
                     <div class="flex justify-between items-end">
                         <div class="flex gap-6 items-center">
@@ -149,38 +170,67 @@
                             </div>
                             <div class="h-10 w-px bg-white/10"></div>
                             <div>
-                                <p id="nextService" class="text-base font-bold text-white tracking-tight leading-none">...</p>
-                                <p id="nextInfo" class="text-[11px] text-zinc-500 font-medium mt-2">...</p>
+                                <p id="nextService" class="text-base font-bold text-white tracking-tight">Завантаження...</p>
+                                <p id="nextInfo" class="text-[11px] text-zinc-500 font-medium">---</p>
                             </div>
                         </div>
-                        <button class="text-[9px] font-black text-zinc-500 uppercase tracking-widest hover:text-white transition">Скасувати</button>
+                        <button class="text-[9px] font-black text-zinc-400 uppercase tracking-widest hover:text-white transition">Скасувати</button>
                     </div>
                 </div>
 
-                <!-- ІСТОРІЯ ВІЗИТІВ -->
+                <!-- HISTORY -->
                 <div class="glass-panel p-8 rounded-[2.5rem]">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none">Історія моїх візитів</h4>
+                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none">Історія візитів</h4>
                     <div id="historyList" class="space-y-6">
-                        <!-- JS вставить дані сюди -->
-                        <p class="text-zinc-600 text-[10px] uppercase font-bold text-center animate-pulse">Завантаження історії...</p>
+                        <!-- Візит 1 -->
+                        <div class="flex justify-between items-center group">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center font-bold text-xs text-zinc-500 uppercase leading-none">28.09</div>
+                                <div>
+                                    <p class="text-sm font-bold text-white tracking-tight leading-none">Манікюр + Дизайн</p>
+                                    <p class="text-[10px] text-zinc-500 mt-1 font-medium italic-none">Майстер: Марія П. • ₴1,200</p>
+                                </div>
+                            </div>
+                            <button class="px-4 py-2 border border-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-white/5 transition">Повторити</button>
+                        </div>
+                        <!-- Візит 2 -->
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center font-bold text-xs text-zinc-500 uppercase leading-none">12.08</div>
+                                <div>
+                                    <p class="text-sm font-bold text-white tracking-tight leading-none">Стрижка жіноча</p>
+                                    <p class="text-[10px] text-zinc-500 mt-1 font-medium">Майстер: Анна К. • ₴850</p>
+                                </div>
+                            </div>
+                            <button class="px-4 py-2 border border-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-white/5 transition">Повторити</button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- МОЇ ВІДГУКИ -->
-                <div class="glass-panel p-8 rounded-[2.5rem]">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none">Мої відгуки</h4>
+                <!-- REVIEWS -->
+               <div class="glass-panel p-8 rounded-[2.5rem]">
+                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none italic-none">Мої відгуки</h4>
                     <div id="myReviewsList" class="space-y-4">
-                        <!-- JS вставить дані сюди -->
-                        <p class="text-zinc-600 text-[10px] uppercase font-bold text-center">У вас поки немає відгуків</p>
+                        <div class="p-4 bg-white/2 rounded-2xl border border-white/5 relative">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="text-amber-500 text-[10px]">
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
+                                </div>
+                                <span class="text-[9px] text-zinc-600 font-bold uppercase tracking-widest">на Анну К.</span>
+                            </div>
+                            <p class="text-xs text-zinc-300 font-medium leading-relaxed italic-none">«Анна справжня чарівниця! Фарбування виглядає неймовірно природньо, волосся стало навіть кращим за станом.»</p>
+                        </div>
                     </div>
                 </div>
 
             </div>
         </div>
     </main>
-
-    <!-- СКРИПТИ -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-init.js"></script>
     <script src="js/client-dashboard.js"></script>
 </body>
