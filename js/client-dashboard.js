@@ -49,77 +49,144 @@ async function loadHistory(clientId) {
         </div>
     `).join('');
 }
-// 2. ФУНКЦІЯ РЕНДЕРУ ПРОФІЛЮ (ГОЛОВНА СТОРІНКА)
+
+// 2. ФУНКЦІЯ РЕНДЕРУ ПРОФІЛЮ (ТВІЙ ОРИГІНАЛЬНИЙ ДИЗАЙН)
 window.renderProfilePage = async function() {
     const main = document.querySelector('main');
     const userId = localStorage.getItem('wella_glow_user_id');
 
-    // Отримуємо дані клієнта, історію та відгуки
-    const [clientRes, historyRes, reviewsRes] = await Promise.all([
+    // Отримуємо дані
+    const [clientRes, historyRes, reviewsRes, nextAppRes] = await Promise.all([
         window.db.from('clients').select('*').eq('id', userId).single(),
         window.db.from('appointment_history').select('*').eq('client_id', userId).order('visit_date', { ascending: false }),
-        window.db.from('reviews').select('*').eq('client_id', userId)
+        window.db.from('reviews').select('*').eq('client_id', userId),
+        window.db.from('appointments').select('*').eq('client_id', userId).eq('status', 'waiting').order('appointment_date', { ascending: true }).limit(1)
     ]);
 
     const client = clientRes.data;
     const history = historyRes.data || [];
     const reviews = reviewsRes.data || [];
+    const nextApp = nextAppRes.data?.[0];
 
     if (!client) return;
 
-    // Визначаємо статус лояльності
-    const status = client.ltv > 5000 ? 'Glow Gold Member' : 'Glow Silver Member';
     const firstName = client.full_name.split(' ')[0];
+    const statusLabel = client.ltv >= 5000 ? 'Glow Gold Member' : 'Glow Silver Member';
 
+    // Вставляємо ТВІЙ ОРИГІНАЛЬНИЙ HTML з динамічними даними
     main.innerHTML = `
+        <!-- HEADER -->
         <header class="flex justify-between items-center mb-10">
             <div>
                 <h2 class="text-2xl font-extrabold text-white tracking-tight leading-none">Вітаємо, ${firstName}! ✨</h2>
                 <p class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest mt-2 leading-none">Твій день для краси сьогодні</p>
             </div>
-            <div class="px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                <span class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Статус: ${status}</span>
-            </div>
+            <button class="bg-white/5 p-2 rounded-xl text-zinc-400 hover:text-white transition">
+                <i class="fa-solid fa-gear"></i>
+            </button>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- LEFT COLUMN: STATUS & BOOKING -->
             <div class="lg:col-span-1 space-y-6">
-                <!-- БАЛАНС -->
-                <div class="glass-panel p-8 rounded-[2rem] relative overflow-hidden">
-                    <div class="absolute -right-10 -top-10 w-32 h-32 bg-rose-500/10 rounded-full blur-3xl"></div>
-                    <p class="text-[9px] text-zinc-500 uppercase font-black tracking-widest leading-none">Мій баланс</p>
-                    <h3 class="text-4xl font-black text-white mt-4">${client.bonuses} <span class="text-sm text-zinc-600 ml-1">балів</span></h3>
-                    <button onclick="window.renderBookingPage()" class="neo-gradient w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-white mt-10 shadow-xl transition active:scale-95">
-                        Новий запис
-                    </button>
+                
+                <!-- LOYALTY CARD -->
+                <div class="glass-panel p-6 rounded-[2rem] border-t-4 border-t-amber-500 relative overflow-hidden">
+                    <div class="absolute -right-10 -top-10 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl"></div>
+                    <div class="flex justify-between items-start mb-10">
+                        <div>
+                            <p class="text-[9px] text-zinc-500 uppercase font-black tracking-widest leading-none">Статус лояльності</p>
+                            <h3 class="text-xl font-black text-amber-500 mt-2 uppercase tracking-tighter leading-none">${statusLabel}</h3>
+                        </div>
+                        <i class="fa-solid fa-crown text-amber-500"></i>
+                    </div>
+                    
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <p class="text-3xl font-black text-white leading-none">${client.bonuses} <span class="text-xs font-bold text-zinc-600 ml-1 italic-none">балів</span></p>
+                            <p class="text-[9px] text-zinc-500 mt-2 uppercase font-black leading-none">Знижка на послуги: ${client.ltv >= 5000 ? '15%' : '10%'}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/5">
+                            <i class="fa-solid fa-qrcode text-zinc-400"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QUICK BOOKING -->
+                <div class="glass-panel p-6 rounded-[2.5rem]">
+                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-6 leading-none">Швидкий запис</h4>
+                    <div class="space-y-4">
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[8px] text-zinc-600 uppercase font-black ml-1">Оберіть послугу</label>
+                            <select class="input-dark">
+                                <option>Складне фарбування</option>
+                                <option>Манікюр + Покриття</option>
+                                <option>Догляд за волоссям</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="text-[8px] text-zinc-600 uppercase font-black ml-1">Бажана дата</label>
+                            <input type="date" class="input-dark">
+                        </div>
+                        <button onclick="window.renderBookingPage()" class="neo-gradient w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-white shadow-xl shadow-rose-500/10 mt-2 transition active:scale-95">
+                            Забронювати візит
+                        </button>
+                    </div>
                 </div>
             </div>
 
+            <!-- RIGHT COLUMN: HISTORY & REVIEWS -->
             <div class="lg:col-span-2 space-y-8">
-                <!-- ІСТОРІЯ ВІЗИТІВ (ДИНАМІЧНА) -->
+                
+                <!-- UPCOMING APPOINTMENT (Emerald if exists, else hidden) -->
+                ${nextApp ? `
+                <div class="p-6 rounded-[2.5rem] bg-emerald-500/5 border border-emerald-500/20">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-xs font-black text-emerald-500 uppercase tracking-widest leading-none">Найближчий запис</h4>
+                        <span class="status-badge bg-emerald-500 text-white">Очікується</span>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <div class="flex gap-6 items-center">
+                            <div class="text-center">
+                                <p class="text-2xl font-black text-white leading-none tracking-tighter">${new Date(nextApp.appointment_date).getDate()}</p>
+                                <p class="text-[10px] text-zinc-500 font-bold uppercase mt-1 leading-none">${new Date(nextApp.appointment_date).toLocaleString('uk-UA', {month: 'long'})}</p>
+                            </div>
+                            <div class="h-10 w-px bg-white/10"></div>
+                            <div>
+                                <p class="text-base font-bold text-white tracking-tight">${nextApp.service_name}</p>
+                                <p class="text-[11px] text-zinc-500 font-medium">${nextApp.appointment_time}</p>
+                            </div>
+                        </div>
+                        <button class="text-[9px] font-black text-zinc-400 uppercase tracking-widest hover:text-white transition">Скасувати</button>
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- HISTORY -->
                 <div class="glass-panel p-8 rounded-[2.5rem]">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none">Історія моїх візитів</h4>
+                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none">Історія візитів</h4>
                     <div class="space-y-6">
                         ${history.length > 0 ? history.map(h => `
                             <div class="flex justify-between items-center group">
                                 <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center font-bold text-xs text-zinc-500 uppercase">
+                                    <div class="w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center font-bold text-xs text-zinc-500 uppercase leading-none">
                                         ${new Date(h.visit_date).toLocaleDateString('uk-UA', {day: '2-digit', month: '2-digit'})}
                                     </div>
                                     <div>
                                         <p class="text-sm font-bold text-white tracking-tight leading-none">${h.service_name}</p>
-                                        <p class="text-[10px] text-zinc-500 mt-1 uppercase font-bold tracking-widest">Майстер: ${h.master_name} • ₴${h.price}</p>
+                                        <p class="text-[10px] text-zinc-500 mt-1 font-medium italic-none">Майстер: ${h.master_name} • ₴${h.price}</p>
                                     </div>
                                 </div>
                                 <button onclick="window.renderBookingPage()" class="px-4 py-2 border border-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-white/5 transition">Повторити</button>
                             </div>
-                        `).join('') : '<p class="text-zinc-600 text-xs font-bold uppercase">У вас ще не було візитів</p>'}
+                        `).join('') : '<p class="text-zinc-600 text-xs font-bold uppercase">Історія порожня</p>'}
                     </div>
                 </div>
 
-                <!-- ВІДГУКИ (ДИНАМІЧНІ) -->
+                <!-- REVIEWS -->
                 <div class="glass-panel p-8 rounded-[2.5rem]">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none">Мої відгуки</h4>
+                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none italic-none">Мої відгуки</h4>
                     <div class="space-y-4">
                         ${reviews.length > 0 ? reviews.map(r => `
                             <div class="p-4 bg-white/2 rounded-2xl border border-white/5 relative">
@@ -127,13 +194,14 @@ window.renderProfilePage = async function() {
                                     <div class="text-amber-500 text-[10px]">
                                         ${'<i class="fa-solid fa-star"></i>'.repeat(r.rating)}
                                     </div>
-                                    <span class="text-[9px] text-zinc-600 font-bold uppercase tracking-widest">${new Date(r.created_at).toLocaleDateString('uk-UA')}</span>
+                                    <span class="text-[9px] text-zinc-600 font-bold uppercase tracking-widest">на ${r.master_name || 'майстра'}</span>
                                 </div>
-                                <p class="text-xs text-zinc-300 font-medium leading-relaxed">${r.comment}</p>
+                                <p class="text-xs text-zinc-300 font-medium leading-relaxed italic-none">«${r.comment}»</p>
                             </div>
-                        `).join('') : '<p class="text-zinc-600 text-xs font-bold uppercase text-center">Ви ще не залишали відгуків</p>'}
+                        `).join('') : '<p class="text-zinc-600 text-xs font-bold uppercase">Ви ще не залишали відгуків</p>'}
                     </div>
                 </div>
+
             </div>
         </div>
     `;
