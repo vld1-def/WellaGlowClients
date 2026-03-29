@@ -33,8 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data) {
                 // 2. Якщо знайдено - зберігаємо сесію
                 localStorage.setItem('wella_glow_user_id', data.id);
-                
-                alert(`Вітаємо, ${data.full_name.split(' ')[0]}!`);
+            
                 
                 // 3. Редірект на кабінет
                 window.location.href = 'client-dashboard.html';
