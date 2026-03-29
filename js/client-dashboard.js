@@ -410,7 +410,7 @@ window.selectDate = async function(el, date) {
             .from('staff_shifts')
             .select('start_time, end_time')
             .eq('staff_id', window.selectedMasterId)
-            .eq('work_date', date)
+            .eq('shift_date', date)
             .single();
 
         // 3. Отримуємо вже існуючі записи (appointments) на цей день
