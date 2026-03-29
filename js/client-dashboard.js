@@ -390,27 +390,72 @@ function renderCalendar(availableDates) {
     }
 }
 
-// --- ВИБІР ДАТИ В КАЛЕНДАРІ ---
-window.selectDate = function(el, date) {
+// --- ВИБІР ДАТИ ТА ПЕРЕВІРКА ВІЛЬНИХ СЛОТІВ ---
+window.selectDate = async function(el, date) {
+    // 1. Візуальний стиль вибраної дати
     document.querySelectorAll('.calendar-day').forEach(d => {
         d.classList.remove('bg-rose-500', 'text-white');
         d.classList.add('bg-white/5');
     });
-    
     el.classList.add('bg-rose-500', 'text-white');
     el.classList.remove('bg-white/5');
-    
+
     window.selectedDateValue = date;
-    
-    // Створюємо слоти часу після вибору дати
     const timeGrid = document.getElementById('timeSlots');
-    if (timeGrid) {
-        const times = ['10:00', '12:30', '15:00', '17:30', '19:00'];
-        timeGrid.innerHTML = times.map(t => `
-            <button onclick="window.selectTime(this)" class="time-btn p-2 bg-white/5 rounded-lg border border-white/5 text-[10px] font-black hover:border-rose-500 transition">${t}</button>
+    timeGrid.innerHTML = '<p class="col-span-4 text-[10px] text-zinc-600 uppercase font-bold animate-pulse">Перевірка часу...</p>';
+
+    try {
+        // 2. Отримуємо робочу зміну майстра
+        const { data: shift } = await window.db
+            .from('staff_schedule')
+            .select('start_time, end_time')
+            .eq('staff_id', window.selectedMasterId)
+            .eq('work_date', date)
+            .single();
+
+        // 3. Отримуємо вже існуючі записи (appointments) на цей день
+        const { data: bookedSlots } = await window.db
+            .from('appointments')
+            .select('appointment_time')
+            .eq('master_id', window.selectedMasterId)
+            .eq('appointment_date', date)
+            .not('status', 'eq', 'rejected'); // Не рахуємо відхилені записи
+
+        if (!shift) {
+            timeGrid.innerHTML = '<p class="col-span-4 text-[10px] text-rose-400 uppercase font-bold">Майстер вихідний у цей день</p>';
+            return;
+        }
+
+        // 4. ГЕНЕРУЄМО СІТКУ ЧАСУ (наприклад, кожні 60 хв)
+        const slots = [];
+        let current = parseInt(shift.start_time.split(':')[0]);
+        const end = parseInt(shift.end_time.split(':')[0]);
+
+        while (current < end) {
+            const timeStr = `${current}:00`;
+            // Перевіряємо чи час заброньовано
+            const isBooked = bookedSlots.some(b => b.appointment_time.startsWith(timeStr));
+            slots.push({ time: timeStr, booked: isBooked });
+            current++;
+        }
+
+        // 5. МАЛЮЄМО КНОПКИ ЧАСУ
+        timeGrid.innerHTML = slots.map(s => `
+            <button 
+                onclick="${s.booked ? '' : 'window.selectTime(this)'}" 
+                class="time-btn p-2 rounded-lg border border-white/5 text-[10px] font-black transition
+                ${s.booked ? 'opacity-10 cursor-not-allowed bg-zinc-900' : 'bg-white/5 hover:border-rose-500 text-zinc-400'}"
+                ${s.booked ? 'disabled' : ''}>
+                ${s.time}
+                ${s.booked ? '<span class="block text-[7px] text-rose-500">Зайнято</span>' : ''}
+            </button>
         `).join('');
+
+    } catch (err) {
+        console.error(err);
+        timeGrid.innerHTML = '<p class="text-xs text-rose-500">Помилка завантаження</p>';
     }
-    
+
     window.updateSummary();
 };
 
