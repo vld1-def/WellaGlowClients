@@ -517,32 +517,67 @@ window.updateSummary = function() {
     }
 };
 
-// ФІНАЛЬНЕ ПІДТВЕРДЖЕННЯ ТА ЗАПИС В БАЗУ
-async function confirmBooking() {
-    const service = document.getElementById('selectService').value;
-    const date = document.getElementById('bookDate').value;
+// --- ФІНАЛЬНА ФУНКЦІЯ ПІДТВЕРДЖЕННЯ ЗАПИСУ ---
+window.confirmBooking = async function() {
     const clientId = localStorage.getItem('wella_glow_user_id');
-    const price = document.getElementById('selectService').options[document.getElementById('selectService').selectedIndex].dataset.price;
-
-    if (!service || service === "0" || !selectedMasterId || !date || !selectedTimeValue) {
-        alert("Будь ласка, заповніть усі кроки бронювання");
+    
+    // 1. Отримуємо елемент селекту послуг
+    const serviceSelect = document.getElementById('selectService');
+    if (!serviceSelect) {
+        console.error("Елемент #selectService не знайдено");
         return;
     }
 
-    const { error } = await window.db.from('appointments').insert([{
-        client_id: clientId,
-        master_id: selectedMasterId,
-        service_name: service,
-        appointment_date: date,
-        appointment_time: selectedTimeValue,
-        price: parseInt(price),
-        status: 'waiting'
-    }]);
+    const serviceName = serviceSelect.value;
+    const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+    const price = selectedOption ? selectedOption.dataset.price : 0;
 
-    if (error) {
-        alert("Помилка при записі: " + error.message);
-    } else {
-        alert("Ви успішно записані! Чекаємо на вас ✨");
-        location.reload(); // Повертаємось на головну кабінету
+    // 2. ВАЛІДАЦІЯ: Перевіряємо, чи клієнт все обрав
+    // Тепер ми беремо дату і час із ГЛОБАЛЬНИХ ЗМІННИХ, а не з інпутів
+    if (serviceName === "0" || !window.selectedMasterId || !window.selectedDateValue || !window.selectedTimeValue) {
+        alert("Будь ласка, оберіть послугу, майстра, дату та час візиту.");
+        return;
     }
-}
+
+    // Блокуємо кнопку, щоб уникнути подвійних кліків
+    const btn = event.target;
+    const originalText = btn.innerText;
+    btn.innerText = "ОБРОБКА...";
+    btn.disabled = true;
+
+    try {
+        // 3. ВІДПРАВКА В SUPABASE
+        const { data, error } = await window.db
+            .from('appointments')
+            .insert([{
+                client_id: clientId,
+                master_id: window.selectedMasterId,
+                service_name: serviceName,
+                appointment_date: window.selectedDateValue,
+                appointment_time: window.selectedTimeValue,
+                price: parseInt(price),
+                status: 'waiting' // Статус за замовчуванням "На розгляді"
+            }]);
+
+        if (error) throw error;
+
+        // 4. УСПІХ
+        alert("Запис успішно створено! Очікуйте на підтвердження адміністратором. ✨");
+        
+        // Очищаємо змінні перед поверненням
+        window.selectedMasterId = null;
+        window.selectedDateValue = null;
+        window.selectedTimeValue = null;
+
+        // Повертаємось у профіль
+        window.renderProfilePage();
+
+    } catch (err) {
+        console.error("Помилка бронювання:", err.message);
+        alert("Не вдалося створити запис: " + err.message);
+        
+        // Повертаємо кнопку в робочий стан
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
+};
