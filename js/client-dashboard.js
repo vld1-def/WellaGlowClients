@@ -407,7 +407,7 @@ window.selectDate = async function(el, date) {
     try {
         // 2. Отримуємо робочу зміну майстра
         const { data: shift } = await window.db
-            .from('staff_schedule')
+            .from('staff_shifts')
             .select('start_time, end_time')
             .eq('staff_id', window.selectedMasterId)
             .eq('work_date', date)
