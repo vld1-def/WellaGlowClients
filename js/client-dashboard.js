@@ -1,5 +1,8 @@
 // js/client-dashboard.js
-
+// Глобальні змінні для збереження вибору клієнта
+window.selectedMasterId = null;
+window.selectedDateValue = null;
+window.selectedTimeValue = null;
 // Додай це на самий початок js/client-dashboard.js
 (function checkAuth() {
     const userId = localStorage.getItem('wella_glow_user_id');
@@ -387,17 +390,26 @@ function renderCalendar(availableDates) {
     }
 }
 
+// --- ВИБІР ДАТИ В КАЛЕНДАРІ ---
 window.selectDate = function(el, date) {
-    document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('bg-rose-500', 'text-white'));
+    document.querySelectorAll('.calendar-day').forEach(d => {
+        d.classList.remove('bg-rose-500', 'text-white');
+        d.classList.add('bg-white/5');
+    });
+    
     el.classList.add('bg-rose-500', 'text-white');
+    el.classList.remove('bg-white/5');
+    
     window.selectedDateValue = date;
     
-    // Показуємо слоти часу (спрощено)
+    // Створюємо слоти часу після вибору дати
     const timeGrid = document.getElementById('timeSlots');
-    const times = ['10:00', '12:00', '14:00', '16:00', '18:00'];
-    timeGrid.innerHTML = times.map(t => `
-        <button onclick="window.selectTime(this)" class="time-btn p-2 bg-white/5 rounded-lg border border-white/5 text-[10px] font-black hover:border-rose-500 transition">${t}</button>
-    `).join('');
+    if (timeGrid) {
+        const times = ['10:00', '12:30', '15:00', '17:30', '19:00'];
+        timeGrid.innerHTML = times.map(t => `
+            <button onclick="window.selectTime(this)" class="time-btn p-2 bg-white/5 rounded-lg border border-white/5 text-[10px] font-black hover:border-rose-500 transition">${t}</button>
+        `).join('');
+    }
     
     window.updateSummary();
 };
@@ -413,24 +425,47 @@ function selectMaster(el, id, name) {
     document.getElementById('sumMaster').innerText = name;
 }
 
-function selectTime(el) {
-    document.querySelectorAll('.time-btn').forEach(item => item.classList.remove('bg-rose-500', 'text-white'));
+// --- ВИБІР ЧАСУ ---
+window.selectTime = function(el) {
+    document.querySelectorAll('.time-btn').forEach(item => {
+        item.classList.remove('bg-rose-500', 'text-white');
+        item.classList.add('bg-white/5', 'text-zinc-400');
+    });
+    
     el.classList.add('bg-rose-500', 'text-white');
-    selectedTimeValue = el.innerText;
-    updateSummary();
-}
+    el.classList.remove('bg-white/5', 'text-zinc-400');
+    
+    window.selectedTimeValue = el.innerText;
+    window.updateSummary(); // Оновлюємо підсумок
+};
 
-function updateSummary() {
+// --- ОНОВЛЕНА ФУНКЦІЯ ПІДСУМКУ (БЕЗ ПОМИЛОК) ---
+window.updateSummary = function() {
     const serviceSelect = document.getElementById('selectService');
     const dateInput = document.getElementById('bookDate');
-    
+
+    // Якщо ми не на сторінці запису, просто виходимо
+    if (!serviceSelect || !dateInput) return;
+
     const serviceName = serviceSelect.value;
-    const price = serviceSelect.options[serviceSelect.selectedIndex].dataset.price;
+    const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+    const price = selectedOption ? selectedOption.dataset.price : 0;
+
+    // Отримуємо елементи підсумку (правий блок)
+    const elSumService = document.getElementById('sumService');
+    const elSumPrice = document.getElementById('sumPrice');
+    const elSumDate = document.getElementById('sumDate');
+
+    // Безпечно записуємо дані
+    if (elSumService) elSumService.innerText = (serviceName !== "0") ? serviceName : "---";
+    if (elSumPrice) elSumPrice.innerText = "₴" + (price || 0);
     
-    document.getElementById('sumService').innerText = serviceName !== "0" ? serviceName : "---";
-    document.getElementById('sumPrice').innerText = "₴" + (price || 0);
-    document.getElementById('sumDate').innerText = (dateInput.value || "---") + (selectedTimeValue ? " о " + selectedTimeValue : "");
-}
+    if (elSumDate) {
+        const dateDisplay = dateInput.value ? dateInput.value : "---";
+        const timeDisplay = window.selectedTimeValue ? " о " + window.selectedTimeValue : "";
+        elSumDate.innerText = dateDisplay + timeDisplay;
+    }
+};
 
 // ФІНАЛЬНЕ ПІДТВЕРДЖЕННЯ ТА ЗАПИС В БАЗУ
 async function confirmBooking() {
