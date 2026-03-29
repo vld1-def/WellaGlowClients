@@ -8,34 +8,36 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Автоматичне очищення полів при завантаженні сторінки (захист від кешу браузера)
     form.reset();
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        // 1. Отримуємо всі елементи форми по ID
+        // 1. Отримуємо всі елементи форми
         const elements = {
             name: document.getElementById('clientName'),
             phone: document.getElementById('clientPhone'),
             bday: document.getElementById('clientBday'),
             gender: document.getElementById('clientGender'),
-            insta: document.getElementById('clientInsta'),
-            pass: document.getElementById('clientPassword')
+            pass: document.getElementById('clientPassword'),
+            // Instagram шукаємо окремо, бо він не обов'язковий в HTML
+            insta: document.getElementById('clientInsta')
         };
 
-        // 2. Перевірка наявності елементів у HTML
-        for (const [key, el] of Object.entries(elements)) {
-            if (!el) {
-                console.error(`Помилка: Елемент з ID для "${key}" не знайдено в HTML коді!`);
-                alert("Помилка конфігурації форми. Зверніться до адміністратора.");
+        // 2. Перевірка наявності ОБОВ'ЯЗКОВИХ елементів у HTML
+        const requiredFields = ['name', 'phone', 'bday', 'gender', 'pass'];
+        
+        for (const field of requiredFields) {
+            if (!elements[field]) {
+                console.error(`Помилка: Обов'язковий елемент з ID для "${field}" не знайдено в HTML!`);
+                alert("Помилка конфігурації форми. Перевірте консоль.");
                 return;
             }
         }
 
-        // 3. Валідація (мінімальна перевірка на заповнення)
+        // 3. Валідація заповнення полів користувачем
         if (!elements.name.value || !elements.phone.value || !elements.pass.value) {
-            alert("Будь ласка, заповніть обов'язкові поля: Ім'я, Телефон та Пароль.");
+            alert("Будь ласка, заповніть Ім'я, Телефон та Пароль.");
             return;
         }
 
@@ -45,23 +47,21 @@ document.addEventListener('DOMContentLoaded', () => {
             phone: elements.phone.value.trim(),
             birthday: elements.bday.value || null,
             gender: elements.gender.value,
-            instagram: elements.insta.value.trim() || "@",
-            password: elements.pass.value, // В прототипі зберігаємо як текст
-            bonuses: 500, // Вітальний бонус за реєстрацію
+            password: elements.pass.value,
+            // Якщо інпута немає в HTML або він порожній — записуємо "@"
+            instagram: elements.insta ? (elements.insta.value.trim() || "@") : "@",
+            bonuses: 500,
             ltv: 0,
             last_visit: null,
             created_at: new Date().toISOString()
         };
 
-        // Блокуємо кнопку та показуємо статус
         const submitBtn = form.querySelector('button[type="submit"]');
         const originalBtnText = submitBtn.innerText;
         submitBtn.innerText = "СТВОРЕННЯ ПРОФІЛЮ...";
         submitBtn.disabled = true;
 
         try {
-            // 5. Відправка даних у таблицю 'clients'
-            // Використовуємо .select(), щоб Supabase повернув нам створений запис з його ID
             const { data, error } = await window.db
                 .from('clients')
                 .insert([clientData])
@@ -70,22 +70,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (error) throw error;
 
             if (data && data.length > 0) {
-                const createdUser = data[0];
-
-                // 6. ЗБЕРЕЖЕННЯ СЕСІЇ: записуємо ID клієнта в браузер
-                localStorage.setItem('wella_glow_user_id', createdUser.id);
-
+                localStorage.setItem('wella_glow_user_id', data[0].id);
                 alert("Вітаємо! Ваш профіль успішно створено.");
-                
-                // 7. Редірект на особистий кабінет клієнта
                 window.location.href = 'client-dashboard.html';
             }
 
         } catch (error) {
             console.error('Supabase Error:', error.message);
             alert("Помилка при реєстрації: " + error.message);
-            
-            // Повертаємо кнопку до робочого стану у разі помилки
             submitBtn.innerText = originalBtnText;
             submitBtn.disabled = false;
         }
