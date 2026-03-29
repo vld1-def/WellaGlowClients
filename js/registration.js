@@ -71,7 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (data && data.length > 0) {
                 localStorage.setItem('wella_glow_user_id', data[0].id);
-                alert("Вітаємо! Ваш профіль успішно створено.");
                 window.location.href = 'client-dashboard.html';
             }
 
