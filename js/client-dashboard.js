@@ -365,22 +365,30 @@ window.loadMasterAvailability = async function(el, masterId, name) {
 // --- 4. МАЛЮЄМО КАЛЕНДАР ---
 function renderCalendar(availableDates) {
     const grid = document.getElementById('calendarGrid');
+    if (!grid) return;
     grid.innerHTML = '';
     
     const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
     days.forEach(d => grid.innerHTML += `<div class="text-[9px] font-black text-zinc-600 uppercase mb-2">${d}</div>`);
 
     const today = new Date();
-    // Генеруємо наступні 14 днів
+    
     for (let i = 0; i < 14; i++) {
         const date = new Date();
         date.setDate(today.getDate() + i);
-        const dateStr = date.toISOString().split('T')[0];
+
+        // ПРАВИЛЬНЕ ФОРМУВАННЯ ДАТИ (локальне YYYY-MM-DD)
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`; 
+
+        // Перевіряємо чи є ця дата у масиві доступних дат від майстра
         const isAvailable = availableDates.includes(dateStr);
         
         grid.innerHTML += `
             <button 
-                onclick="window.selectDate(this, '${dateStr}')" 
+                onclick="${isAvailable ? `window.selectDate(this, '${dateStr}')` : ''}" 
                 class="calendar-day p-3 rounded-xl text-[11px] font-bold border border-white/5 transition
                 ${isAvailable ? 'bg-white/5 text-white hover:border-rose-500' : 'opacity-10 cursor-not-allowed'}"
                 ${!isAvailable ? 'disabled' : ''}>
