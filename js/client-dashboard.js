@@ -50,17 +50,16 @@ async function loadHistory(clientId) {
     `).join('');
 }
 
-// 2. ФУНКЦІЯ РЕНДЕРУ ПРОФІЛЮ (ТВІЙ ОРИГІНАЛЬНИЙ ДИЗАЙН)
 window.renderProfilePage = async function() {
     const main = document.querySelector('main');
     const userId = localStorage.getItem('wella_glow_user_id');
 
-    // Отримуємо дані
+    // Отримуємо дані клієнта, історію, відгуки та найближчий запис (з ім'ям майстра через join)
     const [clientRes, historyRes, reviewsRes, nextAppRes] = await Promise.all([
         window.db.from('clients').select('*').eq('id', userId).single(),
         window.db.from('appointment_history').select('*').eq('client_id', userId).order('visit_date', { ascending: false }),
         window.db.from('reviews').select('*').eq('client_id', userId),
-        window.db.from('appointments').select('*').eq('client_id', userId).eq('status', 'waiting').order('appointment_date', { ascending: true }).limit(1)
+        window.db.from('appointments').select('*, staff(name)').eq('client_id', userId).eq('status', 'waiting').order('appointment_date', { ascending: true }).limit(1)
     ]);
 
     const client = clientRes.data;
@@ -70,10 +69,16 @@ window.renderProfilePage = async function() {
 
     if (!client) return;
 
-    const firstName = client.full_name.split(' ')[0];
-    const statusLabel = client.ltv >= 5000 ? 'Glow Gold Member' : 'Glow Silver Member';
+    // --- ЛОГІКА РАНГІВ ЛОЯЛЬНОСТІ ---
+    let tier = { name: 'SILVER', color: 'zinc-400', icon: 'fa-medal', discount: '5%' };
+    if (client.ltv >= 15000) {
+        tier = { name: 'PLATINUM', color: 'cyan-400', icon: 'fa-gem', discount: '15%' };
+    } else if (client.ltv >= 5000) {
+        tier = { name: 'GOLD', color: 'amber-500', icon: 'fa-crown', discount: '10%' };
+    }
 
-    // Вставляємо ТВІЙ ОРИГІНАЛЬНИЙ HTML з динамічними даними
+    const firstName = client.full_name.split(' ')[0];
+
     main.innerHTML = `
         <!-- HEADER -->
         <header class="flex justify-between items-center mb-10">
@@ -81,31 +86,29 @@ window.renderProfilePage = async function() {
                 <h2 class="text-2xl font-extrabold text-white tracking-tight leading-none">Вітаємо, ${firstName}! ✨</h2>
                 <p class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest mt-2 leading-none">Твій день для краси сьогодні</p>
             </div>
-            <button class="bg-white/5 p-2 rounded-xl text-zinc-400 hover:text-white transition">
-                <i class="fa-solid fa-gear"></i>
-            </button>
+            <div class="px-4 py-2 bg-${tier.color}/10 border border-${tier.color}/20 rounded-xl transition-all duration-500">
+                <span class="text-[10px] font-black text-${tier.color} uppercase tracking-[0.2em]">Статус: ${tier.name}</span>
+            </div>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            <!-- LEFT COLUMN: STATUS & BOOKING -->
             <div class="lg:col-span-1 space-y-6">
-                
-                <!-- LOYALTY CARD -->
-                <div class="glass-panel p-6 rounded-[2rem] border-t-4 border-t-amber-500 relative overflow-hidden">
-                    <div class="absolute -right-10 -top-10 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl"></div>
+                <!-- LOYALTY CARD (ДИНАМІЧНІ КОЛЬОРИ) -->
+                <div class="glass-panel p-6 rounded-[2rem] border-t-4 border-t-${tier.color} relative overflow-hidden transition-all duration-500">
+                    <div class="absolute -right-10 -top-10 w-32 h-32 bg-${tier.color}/10 rounded-full blur-3xl"></div>
                     <div class="flex justify-between items-start mb-10">
                         <div>
                             <p class="text-[9px] text-zinc-500 uppercase font-black tracking-widest leading-none">Статус лояльності</p>
-                            <h3 class="text-xl font-black text-amber-500 mt-2 uppercase tracking-tighter leading-none">${statusLabel}</h3>
+                            <h3 class="text-xl font-black text-${tier.color} mt-2 uppercase tracking-tighter leading-none">Glow ${tier.name} Member</h3>
                         </div>
-                        <i class="fa-solid fa-crown text-amber-500"></i>
+                        <i class="fa-solid ${tier.icon} text-${tier.color} text-xl shadow-lg"></i>
                     </div>
                     
                     <div class="flex justify-between items-end">
                         <div>
-                            <p class="text-3xl font-black text-white leading-none">${client.bonuses} <span class="text-xs font-bold text-zinc-600 ml-1 italic-none">балів</span></p>
-                            <p class="text-[9px] text-zinc-500 mt-2 uppercase font-black leading-none">Знижка на послуги: ${client.ltv >= 5000 ? '15%' : '10%'}</p>
+                            <p class="text-3xl font-black text-white leading-none">${client.bonuses} <span class="text-xs font-bold text-zinc-600 ml-1">балів</span></p>
+                            <p class="text-[9px] text-zinc-500 mt-2 uppercase font-black leading-none">Знижка на послуги: ${tier.discount}</p>
                         </div>
                         <div class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/5">
                             <i class="fa-solid fa-qrcode text-zinc-400"></i>
@@ -119,15 +122,11 @@ window.renderProfilePage = async function() {
                     <div class="space-y-4">
                         <div class="flex flex-col gap-2">
                             <label class="text-[8px] text-zinc-600 uppercase font-black ml-1">Оберіть послугу</label>
-                            <select class="input-dark">
+                            <select id="quickService" class="input-dark">
                                 <option>Складне фарбування</option>
                                 <option>Манікюр + Покриття</option>
                                 <option>Догляд за волоссям</option>
                             </select>
-                        </div>
-                        <div class="flex flex-col gap-2">
-                            <label class="text-[8px] text-zinc-600 uppercase font-black ml-1">Бажана дата</label>
-                            <input type="date" class="input-dark">
                         </div>
                         <button onclick="window.renderBookingPage()" class="neo-gradient w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-white shadow-xl shadow-rose-500/10 mt-2 transition active:scale-95">
                             Забронювати візит
@@ -136,15 +135,14 @@ window.renderProfilePage = async function() {
                 </div>
             </div>
 
-            <!-- RIGHT COLUMN: HISTORY & REVIEWS -->
             <div class="lg:col-span-2 space-y-8">
                 
-                <!-- UPCOMING APPOINTMENT (Emerald if exists, else hidden) -->
+                <!-- UPCOMING APPOINTMENT (ДОДАНО МАЙСТРА) -->
                 ${nextApp ? `
-                <div class="p-6 rounded-[2.5rem] bg-emerald-500/5 border border-emerald-500/20">
+                <div class="p-6 rounded-[2.5rem] bg-emerald-500/5 border border-emerald-500/20 shadow-lg shadow-emerald-500/5">
                     <div class="flex justify-between items-center mb-4">
                         <h4 class="text-xs font-black text-emerald-500 uppercase tracking-widest leading-none">Найближчий запис</h4>
-                        <span class="status-badge bg-emerald-500 text-white">Очікується</span>
+                        <span class="status-badge bg-emerald-500 text-white px-2 py-1 rounded text-[8px] font-black uppercase">Підтверджено</span>
                     </div>
                     <div class="flex justify-between items-end">
                         <div class="flex gap-6 items-center">
@@ -154,18 +152,18 @@ window.renderProfilePage = async function() {
                             </div>
                             <div class="h-10 w-px bg-white/10"></div>
                             <div>
-                                <p class="text-base font-bold text-white tracking-tight">${nextApp.service_name}</p>
-                                <p class="text-[11px] text-zinc-500 font-medium">${nextApp.appointment_time}</p>
+                                <p class="text-base font-bold text-white tracking-tight leading-none">${nextApp.service_name}</p>
+                                <p class="text-[11px] text-zinc-500 font-medium mt-2">Майстер: <span class="text-zinc-300 font-bold">${nextApp.staff?.name || '---'}</span> • ${nextApp.appointment_time}</p>
                             </div>
                         </div>
-                        <button class="text-[9px] font-black text-zinc-400 uppercase tracking-widest hover:text-white transition">Скасувати</button>
+                        <button class="text-[9px] font-black text-zinc-500 uppercase tracking-widest hover:text-white transition">Скасувати</button>
                     </div>
                 </div>
                 ` : ''}
 
                 <!-- HISTORY -->
                 <div class="glass-panel p-8 rounded-[2.5rem]">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none">Історія візитів</h4>
+                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none">Історія моїх візитів</h4>
                     <div class="space-y-6">
                         ${history.length > 0 ? history.map(h => `
                             <div class="flex justify-between items-center group">
@@ -175,7 +173,7 @@ window.renderProfilePage = async function() {
                                     </div>
                                     <div>
                                         <p class="text-sm font-bold text-white tracking-tight leading-none">${h.service_name}</p>
-                                        <p class="text-[10px] text-zinc-500 mt-1 font-medium italic-none">Майстер: ${h.master_name} • ₴${h.price}</p>
+                                        <p class="text-[10px] text-zinc-500 mt-1 font-medium">Майстер: ${h.master_name} • ₴${h.price}</p>
                                     </div>
                                 </div>
                                 <button onclick="window.renderBookingPage()" class="px-4 py-2 border border-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-white/5 transition">Повторити</button>
@@ -186,7 +184,7 @@ window.renderProfilePage = async function() {
 
                 <!-- REVIEWS -->
                 <div class="glass-panel p-8 rounded-[2.5rem]">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none italic-none">Мої відгуки</h4>
+                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none">Мої відгуки</h4>
                     <div class="space-y-4">
                         ${reviews.length > 0 ? reviews.map(r => `
                             <div class="p-4 bg-white/2 rounded-2xl border border-white/5 relative">
@@ -198,7 +196,7 @@ window.renderProfilePage = async function() {
                                 </div>
                                 <p class="text-xs text-zinc-300 font-medium leading-relaxed italic-none">«${r.comment}»</p>
                             </div>
-                        `).join('') : '<p class="text-zinc-600 text-xs font-bold uppercase">Ви ще не залишали відгуків</p>'}
+                        `).join('') : '<p class="text-zinc-600 text-xs font-bold uppercase">Відгуків ще немає</p>'}
                     </div>
                 </div>
 
