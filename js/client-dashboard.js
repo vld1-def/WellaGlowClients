@@ -99,29 +99,29 @@ window.renderProfilePage = async function() {
     const main = document.querySelector('main');
     const userId = localStorage.getItem('wella_glow_user_id');
 
-    const [clientRes, historyRes, reviewsRes, nextAppRes] = await Promise.all([
+    // 1. Отримуємо дані (ПРИБРАЛИ .limit(1) для записів)
+    const [clientRes, historyRes, reviewsRes, upcomingAppsRes] = await Promise.all([
         window.db.from('clients').select('*').eq('id', userId).single(),
         window.db.from('appointment_history').select('*').eq('client_id', userId).order('visit_date', { ascending: false }),
         window.db.from('reviews').select('*').eq('client_id', userId),
-        window.db.from('appointments').select('*, staff(name)').eq('client_id', userId).order('appointment_date', { ascending: true }).limit(1)
+        window.db.from('appointments')
+            .select('*, staff(name)')
+            .eq('client_id', userId)
+            .neq('status', 'rejected') // Не показуємо відхилені
+            .order('appointment_date', { ascending: true }) 
     ]);
 
     const client = clientRes.data;
     const history = historyRes.data || [];
     const reviews = reviewsRes.data || [];
-    const nextApp = nextAppRes.data?.[0];
+    const upcomingApps = upcomingAppsRes.data || []; // Тепер це масив
 
     if (!client) return;
 
-    // Логіка рангів
+    // Логіка рангів (залишається без змін)
     let tier = { name: 'SILVER', color: 'zinc-400', icon: 'fa-medal', discount: '5%' };
     if (client.ltv >= 15000) tier = { name: 'PLATINUM', color: 'cyan-400', icon: 'fa-gem', discount: '15%' };
     else if (client.ltv >= 5000) tier = { name: 'GOLD', color: 'amber-500', icon: 'fa-crown', discount: '10%' };
-
-    // --- ЛОГІКА СТАТУСІВ ЗАПИСУ ---
-    let statusUI = { text: 'На розгляді', color: 'bg-amber-500', pulse: 'pulse-pending' };
-    if (nextApp?.status === 'confirmed') statusUI = { text: 'Підтверджено', color: 'bg-emerald-500', pulse: 'pulse-confirmed' };
-    if (nextApp?.status === 'rejected') statusUI = { text: 'Відхилено', color: 'bg-rose-500', pulse: 'pulse-rejected' };
 
     const firstName = client.full_name.split(' ')[0];
 
@@ -138,59 +138,73 @@ window.renderProfilePage = async function() {
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-1 space-y-6">
+                <!-- LOYALTY CARD -->
                 <div class="glass-panel p-6 rounded-[2rem] border-t-4 border-t-${tier.color} relative overflow-hidden">
                     <div class="absolute -right-10 -top-10 w-32 h-32 bg-${tier.color}/10 rounded-full blur-3xl"></div>
                     <div class="flex justify-between items-start mb-10">
                         <div>
-                            <p class="text-[9px] text-zinc-500 uppercase font-black tracking-widest leading-none">Статус лояльності</p>
-                            <h3 class="text-xl font-black text-${tier.color} mt-2 uppercase tracking-tighter leading-none">Glow ${tier.name} Member</h3>
+                            <p class="text-[9px] text-zinc-500 uppercase font-black tracking-widest leading-none">Мій баланс</p>
+                            <h3 class="text-3xl font-black text-white leading-none mt-2">${client.bonuses} <span class="text-xs font-bold text-zinc-600">балів</span></h3>
                         </div>
                         <i class="fa-solid ${tier.icon} text-${tier.color} text-xl"></i>
                     </div>
-                    <div class="flex justify-between items-end">
-                        <div>
-                            <p class="text-3xl font-black text-white leading-none">${client.bonuses} <span class="text-xs font-bold text-zinc-600 ml-1">балів</span></p>
-                            <p class="text-[9px] text-zinc-500 mt-2 uppercase font-black leading-none">Знижка: ${tier.discount}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="glass-panel p-6 rounded-[2.5rem]">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-6">Швидкий запис</h4>
                     <button onclick="window.renderBookingPage()" class="neo-gradient w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-white shadow-xl shadow-rose-500/10 transition active:scale-95">Забронювати візит</button>
                 </div>
             </div>
 
-            <div class="lg:col-span-2 space-y-8">
-                <!-- НАЙБЛИЖЧИЙ ЗАПИС З ПУЛЬСУЮЧИМ СТАТУСОМ -->
-                ${nextApp ? `
-                <div class="p-6 rounded-[2.5rem] bg-zinc-900/50 border border-white/5 shadow-xl relative overflow-hidden">
-                    <div class="flex justify-between items-center mb-4">
-                        <h4 class="text-xs font-black text-zinc-500 uppercase tracking-widest leading-none">Найближчий запис</h4>
-                        <span class="status-badge ${statusUI.color} ${statusUI.pulse} text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest">
-                            ${statusUI.text}
-                        </span>
-                    </div>
-                    <div class="flex justify-between items-end">
-                        <div class="flex gap-6 items-center">
-                            <div class="text-center">
-                                <p class="text-2xl font-black text-white leading-none tracking-tighter">${new Date(nextApp.appointment_date).getDate()}</p>
-                                <p class="text-[10px] text-zinc-500 font-bold uppercase mt-1 leading-none">${new Date(nextApp.appointment_date).toLocaleString('uk-UA', {month: 'long'})}</p>
-                            </div>
-                            <div class="h-10 w-px bg-white/10"></div>
-                            <div>
-                                <p class="text-base font-bold text-white tracking-tight leading-none">${nextApp.service_name}</p>
-                                <p class="text-[11px] text-zinc-500 font-medium mt-2">Майстер: <span class="text-zinc-300 font-bold">${nextApp.staff?.name || '---'}</span> • ${nextApp.appointment_time}</p>
-                            </div>
-                        </div>
-                        <button onclick="window.cancelAppointment('${nextApp.id}', '${userId}')" class="text-[9px] font-black text-rose-500/50 hover:text-rose-500 uppercase tracking-widest transition-all">Скасувати візит</button>
-                    </div>
-                </div>
-                ` : '<p class="text-zinc-600 text-[10px] font-bold uppercase tracking-widest p-6 glass-panel rounded-3xl text-center">Активних записів немає</p>'}
+            <div class="lg:col-span-2 space-y-6">
+                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4 mb-2">Найближчі записи</h4>
+                
+                <!-- ЦИКЛ ПО ВСІХ МАЙБУТНІХ ЗАПИСАХ -->
+                ${upcomingApps.length > 0 ? upcomingApps.map(app => {
+                    // Визначаємо стиль статусу для кожного запису окремо
+                    let statusUI = { text: 'На розгляді', color: 'bg-amber-500', pulse: 'pulse-pending' };
+                    if (app.status === 'confirmed') statusUI = { text: 'Підтверджено', color: 'bg-emerald-500', pulse: 'pulse-confirmed' };
+                    if (app.status === 'rejected') statusUI = { text: 'Відхилено', color: 'bg-rose-500', pulse: 'pulse-rejected' };
 
-                <div class="glass-panel p-8 rounded-[2.5rem]">
+                    return `
+                    <div class="p-6 rounded-[2.5rem] bg-zinc-900/40 border border-white/5 shadow-xl relative overflow-hidden mb-4">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="status-badge ${statusUI.color} ${statusUI.pulse} text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest">
+                                ${statusUI.text}
+                            </span>
+                            <span class="text-[10px] font-black text-zinc-600 uppercase tracking-widest">ID: ${app.id.slice(0,5)}</span>
+                        </div>
+                        <div class="flex justify-between items-end">
+                            <div class="flex gap-6 items-center">
+                                <div class="text-center">
+                                    <p class="text-2xl font-black text-white leading-none tracking-tighter">${new Date(app.appointment_date).getDate()}</p>
+                                    <p class="text-[10px] text-zinc-500 font-bold uppercase mt-1 leading-none">${new Date(app.appointment_date).toLocaleString('uk-UA', {month: 'short'})}</p>
+                                </div>
+                                <div class="h-10 w-px bg-white/10"></div>
+                                <div>
+                                    <p class="text-base font-bold text-white tracking-tight leading-none">${app.service_name}</p>
+                                    <p class="text-[11px] text-zinc-500 font-medium mt-2">Майстер: <span class="text-zinc-300 font-bold">${app.staff?.name || '---'}</span> • ${app.appointment_time}</p>
+                                </div>
+                            </div>
+                            <button onclick="window.cancelAppointment('${app.id}', '${userId}')" class="text-[9px] font-black text-rose-500/50 hover:text-rose-500 uppercase tracking-widest transition-all">Скасувати</button>
+                        </div>
+                    </div>
+                    `;
+                }).join('') : '<p class="text-zinc-600 text-[10px] font-bold uppercase tracking-widest p-10 glass-panel rounded-3xl text-center border-dashed border-white/5 border-2">У вас немає активних записів</p>'}
+
+                <!-- ІСТОРІЯ ТА ІНШЕ -->
+                <div class="glass-panel p-8 rounded-[2.5rem] mt-10">
                     <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none">Історія моїх візитів</h4>
-                    <div class="space-y-6">${history.map(h => `<div class="flex justify-between items-center group"><div class="flex items-center gap-4"><div class="w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center font-bold text-xs text-zinc-500 uppercase">${new Date(h.visit_date).getDate()}.${new Date(h.visit_date).getMonth()+1}</div><div><p class="text-sm font-bold text-white tracking-tight">${h.service_name}</p><p class="text-[10px] text-zinc-500 mt-1 font-medium">Майстер: ${h.master_name}</p></div></div><button onclick="window.renderBookingPage()" class="px-4 py-2 border border-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition">Повторити</button></div>`).join('')}</div>
+                    <div class="space-y-6">
+                        ${history.map(h => `
+                            <div class="flex justify-between items-center group">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center font-bold text-xs text-zinc-500 uppercase">${new Date(h.visit_date).getDate()}.${new Date(h.visit_date).getMonth()+1}</div>
+                                    <div>
+                                        <p class="text-sm font-bold text-white tracking-tight">${h.service_name}</p>
+                                        <p class="text-[10px] text-zinc-500 mt-1 font-medium">Майстер: ${h.master_name}</p>
+                                    </div>
+                                </div>
+                                <button onclick="window.renderBookingPage()" class="px-4 py-2 border border-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition">Повторити</button>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             </div>
         </div>
