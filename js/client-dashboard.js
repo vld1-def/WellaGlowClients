@@ -480,35 +480,40 @@ window.selectTime = function(el) {
     el.classList.add('bg-rose-500', 'text-white');
     el.classList.remove('bg-white/5', 'text-zinc-400');
     
-    window.selectedTimeValue = el.innerText;
+    window.selectedTimeValue = el.innerText.split('\n')[0].trim(); 
     window.updateSummary(); // Оновлюємо підсумок
 };
 
-// --- ОНОВЛЕНА ФУНКЦІЯ ПІДСУМКУ (БЕЗ ПОМИЛОК) ---
 window.updateSummary = function() {
+    // 1. Отримуємо дані про послугу
     const serviceSelect = document.getElementById('selectService');
-    const dateInput = document.getElementById('bookDate');
+    if (!serviceSelect) return;
 
-    // Якщо ми не на сторінці запису, просто виходимо
-    if (!serviceSelect || !dateInput) return;
-
-    const serviceName = serviceSelect.value;
     const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+    const serviceName = serviceSelect.value !== "0" ? serviceSelect.value : "---";
     const price = selectedOption ? selectedOption.dataset.price : 0;
 
-    // Отримуємо елементи підсумку (правий блок)
+    // 2. Отримуємо елементи підсумку
     const elSumService = document.getElementById('sumService');
     const elSumPrice = document.getElementById('sumPrice');
     const elSumDate = document.getElementById('sumDate');
 
-    // Безпечно записуємо дані
-    if (elSumService) elSumService.innerText = (serviceName !== "0") ? serviceName : "---";
+    // 3. Відображаємо назву послуги та ціну
+    if (elSumService) elSumService.innerText = serviceName;
     if (elSumPrice) elSumPrice.innerText = "₴" + (price || 0);
     
+    // 4. Формуємо рядок дати та часу
     if (elSumDate) {
-        const dateDisplay = dateInput.value ? dateInput.value : "---";
-        const timeDisplay = window.selectedTimeValue ? " о " + window.selectedTimeValue : "";
-        elSumDate.innerText = dateDisplay + timeDisplay;
+        let displayDate = "---";
+        
+        if (window.selectedDateValue) {
+            // Форматуємо дату з 2026-03-31 у 31.03
+            const d = new Date(window.selectedDateValue);
+            displayDate = d.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit' });
+        }
+
+        const displayTime = window.selectedTimeValue ? " о " + window.selectedTimeValue : "";
+        elSumDate.innerText = (window.selectedDateValue ? displayDate : "---") + displayTime;
     }
 };
 
