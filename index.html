@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wella Glow | Онлайн запис</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;500;600;700;800&display=swap');
+        :root { --bg: #050505; --accent: #f43f5e; --emerald: #10b981; }
+        body { font-family: 'Manrope', sans-serif; background-color: var(--bg); color: #e2e8f0; letter-spacing: -0.01em; }
+        .glass-panel { background: rgba(17, 17, 19, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .neo-gradient { background: linear-gradient(135deg, #f43f5e 0%, #fb7185 100%); }
+        .input-dark { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); color: #e2e8f0; font-size: 14px; padding: 12px; border-radius: 12px; outline: none; width: 100%; }
+        i, span, p, h1, h2, h3, h4, button { font-style: normal !important; }
+        .category-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+    </style>
+</head>
+<body class="min-h-screen p-5 lg:p-10 flex flex-col items-center">
+
+    <!-- TOP HEADER (PUBLIC) -->
+    <header class="w-full max-w-5xl flex justify-between items-center mb-12">
+        <div>
+            <h1 class="text-2xl font-extrabold text-white tracking-tighter uppercase leading-none">Wella Glow</h1>
+            <p class="text-[9px] text-rose-500 font-bold tracking-[0.5em] uppercase mt-1">premium studio</p>
+        </div>
+        <div id="auth-status">
+            <!-- Сюди JS вставить кнопку "Увійти" або "Мій кабінет" -->
+        </div>
+    </header>
+
+    <main class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-3 gap-10">
+        
+        <!-- ЛІВА КОЛОНКА: ВИБІР -->
+        <div class="lg:col-span-2 space-y-10">
+            
+            <!-- КРОК 1: КАТЕГОРІЇ ТА ПОСЛУГИ -->
+            <section id="step-services">
+                <h2 class="text-3xl font-black text-white tracking-tight mb-8">Оберіть послуги</h2>
+                
+                <!-- Категорії (динамічно) -->
+                <div id="category-list" class="flex gap-3 mb-8 overflow-x-auto pb-2">
+                    <button class="category-btn active px-6 py-2 rounded-full border border-white/10 text-[10px] font-black uppercase tracking-widest transition">Всі</button>
+                </div>
+
+                <!-- Список послуг -->
+                <div id="services-grid" class="space-y-3">
+                    <!-- JS завантажить послуги сюди -->
+                    <p class="text-zinc-600 animate-pulse uppercase font-bold text-[10px] tracking-widest">Завантаження меню...</p>
+                </div>
+            </section>
+
+            <!-- КРОК 2: МАЙСТЕР (З'являється після вибору послуги) -->
+            <section id="step-masters" class="hidden animate-fade-in">
+                <h2 class="text-3xl font-black text-white tracking-tight mb-8">Оберіть майстра</h2>
+                <div id="masters-grid" class="grid grid-cols-2 md:grid-cols-3 gap-4"></div>
+            </section>
+
+            <!-- КРОК 3: ЧАС (З'являється після вибору майстра) -->
+            <section id="step-time" class="hidden animate-fade-in">
+                <h2 class="text-3xl font-black text-white tracking-tight mb-8">Оберіть час</h2>
+                <div id="calendar-grid" class="grid grid-cols-7 gap-2 mb-8 text-center"></div>
+                <div id="slots-grid" class="grid grid-cols-4 gap-2"></div>
+            </section>
+        </div>
+
+        <!-- ПРАВА КОЛОНКА: СУМАРНИЙ ЧЕК (STICKY) -->
+        <div class="lg:col-span-1">
+            <div id="booking-summary" class="glass-panel p-8 rounded-[2.5rem] sticky top-10 border-t-4 border-t-rose-500 shadow-2xl">
+                <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 text-center">Ваше замовлення</h4>
+                
+                <div id="summary-content" class="space-y-4 mb-10">
+                    <p class="text-zinc-600 text-[10px] text-center uppercase font-bold">Нічого не обрано</p>
+                </div>
+
+                <div id="summary-total" class="hidden border-t border-white/5 pt-4">
+                    <div class="flex justify-between items-center mb-8">
+                        <span class="text-sm font-black text-white uppercase tracking-tighter">Разом</span>
+                        <span id="total-price" class="text-2xl font-black text-emerald-400">₴0</span>
+                    </div>
+                    <button onclick="handleFinalConfirm()" class="neo-gradient w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] text-white shadow-xl transition active:scale-95">
+                        Продовжити
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-init.js"></script>
+    <script src="js/public-booking.js"></script>
+</body>
+</html>
