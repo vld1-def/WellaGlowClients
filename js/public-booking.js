@@ -322,3 +322,93 @@ async function confirmBookingInDatabase(userId) {
         alert("Помилка: " + error.message);
     }
 }
+// Знайти функцію renderInlineAuth і замінити її
+function renderInlineAuth() {
+    const stepServices = document.getElementById('step-services');
+    const stepMasters = document.getElementById('step-masters');
+    const stepTime = document.getElementById('step-time');
+
+    // Ховаємо попередні кроки
+    [stepServices, stepMasters, stepTime].forEach(el => {
+        if (el) el.classList.add('opacity-20', 'pointer-events-none');
+    });
+
+    // Видаляємо стару модалку входу, якщо вона вже була створена
+    const oldAuth = document.getElementById('inline-auth-step');
+    if (oldAuth) oldAuth.remove();
+
+    // Створюємо нову секцію авторизації
+    const authSection = document.createElement('section');
+    authSection.id = 'inline-auth-step';
+    authSection.className = 'glass-panel p-10 rounded-[3rem] border-t-4 border-t-rose-500 animate-fade-in mt-10';
+    authSection.innerHTML = `
+        <h2 class="text-2xl font-black text-white uppercase tracking-tighter mb-2 italic-none">Майже готово</h2>
+        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-8 leading-none italic-none">Увійдіть або зареєструйтесь для підтвердження</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <!-- Вхід -->
+            <div class="space-y-4">
+                <p class="text-[9px] font-black text-white uppercase tracking-widest border-b border-white/5 pb-2">У мене є акаунт</p>
+                <input type="tel" id="inlinePhone" placeholder="Номер телефону" class="input-dark">
+                <input type="password" id="inlinePass" placeholder="Пароль" class="input-dark">
+                <button onclick="window.processInlineLogin()" class="w-full py-3 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest transition italic-none">Увійти</button>
+            </div>
+            
+            <!-- Реєстрація -->
+            <div class="space-y-4 border-l border-white/5 pl-10">
+                <p class="text-[9px] font-black text-white uppercase tracking-widest border-b border-white/5 pb-2">Я тут вперше</p>
+                <input type="text" id="inlineName" placeholder="Прізвище та Ім'я" class="input-dark">
+                <input type="tel" id="inlineNewPhone" placeholder="Номер телефону" class="input-dark">
+                <input type="password" id="inlineNewPass" placeholder="Придумати пароль" class="input-dark">
+                <button onclick="window.processInlineRegister()" class="neo-gradient w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white shadow-xl transition active:scale-95 italic-none">Створити та записатись</button>
+            </div>
+        </div>
+    `;
+
+    // ВИПРАВЛЕНО: Звертаємось через getElementById('left-column')
+    document.getElementById('left-column').appendChild(authSection);
+    authSection.scrollIntoView({ behavior: 'smooth' });
+}
+
+// --- ФУНКЦІЯ РЕЄСТРАЦІЇ ПРЯМО В ПРОЦЕСІ ЗАПИСУ ---
+window.processInlineRegister = async function() {
+    const name = document.getElementById('inlineName').value;
+    const phone = document.getElementById('inlineNewPhone').value;
+    const pass = document.getElementById('inlineNewPass').value;
+
+    if (!name || !phone || !pass) {
+        alert("Будь ласка, заповніть всі поля реєстрації");
+        return;
+    }
+
+    try {
+        // 1. Створюємо клієнта
+        const { data: newUser, error: regError } = await window.db
+            .from('clients')
+            .insert([{
+                full_name: name,
+                phone: phone,
+                password: pass,
+                bonuses: 500
+            }])
+            .select();
+
+        if (regError) throw regError;
+
+        if (newUser && newUser[0]) {
+            // 2. Створюємо запис про вітальний бонус
+            await window.db.from('bonus_history').insert([{
+                client_id: newUser[0].id,
+                amount: 500,
+                type: 'accrual',
+                reason: 'WELCOME BONUS'
+            }]);
+
+            // 3. Зберігаємо сесію та робимо запис
+            localStorage.setItem('wella_glow_user_id', newUser[0].id);
+            confirmBookingInDatabase(newUser[0].id);
+        }
+    } catch (e) {
+        alert("Помилка реєстрації: " + e.message);
+    }
+}
