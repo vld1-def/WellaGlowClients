@@ -78,25 +78,24 @@ window.updateSidebar = function(activeId) {
 
     Object.values(links).forEach(link => {
         if (!link) return;
-        // Скидаємо стилі до неактивних
-        link.classList.remove('text-white', 'border-l-2', 'border-rose-500', 'bg-rose-500/5', 'font-bold');
+        // Скидаємо стилі: прибираємо рожевий колір та фони
+        link.classList.remove('text-white', 'lg:border-l-2', 'border-rose-500', 'bg-rose-500/5', 'font-bold');
         link.classList.add('text-zinc-400');
         
         const icon = link.querySelector('i');
         if (icon) icon.classList.remove('text-rose-500');
     });
 
-    // Встановлюємо активний стиль для обраного пункту
     const active = links[activeId];
     if (active) {
-        active.classList.add('text-white', 'border-l-2', 'border-rose-500', 'bg-rose-500/5', 'font-bold');
+        // Додаємо активні класи (lg:border-l-2 - це смужка збоку тільки на десктопі)
+        active.classList.add('text-white', 'lg:border-l-2', 'border-rose-500', 'bg-rose-500/5', 'font-bold');
         active.classList.remove('text-zinc-400');
         
         const icon = active.querySelector('i');
         if (icon) icon.classList.add('text-rose-500');
     }
 };
-
 async function loadHistory(clientId) {
     const { data: history } = await window.db
         .from('appointment_history')
