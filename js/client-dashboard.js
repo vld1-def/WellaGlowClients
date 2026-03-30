@@ -238,8 +238,8 @@ window.renderProfilePage = async function() {
                             // Перевіряємо, чи вже був відгук для цього візиту
                             const hasReview = reviews.some(r => r.appointment_id === h.id);
 
-                            return `
-                            <div class="review-container flex flex-col">
+                           return `
+                            <div class="review-container flex flex-col mb-6">
                                 <div class="flex justify-between items-center group">
                                     <div class="flex items-center gap-4">
                                         <div class="w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center font-bold text-xs text-zinc-500 uppercase italic-none">
@@ -252,7 +252,7 @@ window.renderProfilePage = async function() {
                                     </div>
                                     <button onclick="window.renderBookingPage('${h.service_id}', '${h.master_id}')" class="px-4 py-2 border border-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-white/5 transition italic-none">Повторити</button>
                                 </div>
-
+                            
                                 <!-- СЕКЦІЯ ВІДГУКУ -->
                                 <div class="mt-4 pt-4 border-t border-white/5">
                                     ${hasReview ? `
@@ -262,16 +262,17 @@ window.renderProfilePage = async function() {
                                     ` : `
                                         <div class="flex items-center gap-3">
                                             <span class="text-[8px] font-black text-zinc-600 uppercase tracking-widest italic-none">Ваша оцінка:</span>
-                                            <div class="flex gap-1.5 stars-row">
+                                            <div class="flex gap-1.5 stars-row" onmouseleave="window.resetStars(this)">
                                                 ${[1, 2, 3, 4, 5].map(star => `
-                                                    <i class="fa-solid fa-star text-zinc-800 text-[10px] cursor-pointer hover:text-amber-500 transition duration-300" 
+                                                    <i class="fa-solid fa-star text-zinc-800 text-[10px] cursor-pointer transition duration-200" 
+                                                       onmouseenter="window.hoverStars(this, ${star})"
                                                        onclick="window.showReviewInput(this, ${star}, '${h.id}')"></i>
                                                 `).join('')}
                                             </div>
                                         </div>
-                                        <div class="review-input-block hidden mt-3 animate-fade-in">
+                                        <div class="review-input-block hidden mt-3">
                                             <div class="flex gap-2">
-                                                <input type="text" placeholder="Що вам сподобалось? (необов'язково)..." 
+                                                <input type="text" placeholder="Що вам сподобалось?" 
                                                        class="input-dark flex-1 !py-2 !px-4 !text-[11px] italic-none">
                                                 <button onclick="window.submitReview(this, '${h.id}', '${h.master_id}')" 
                                                         class="bg-emerald-500 hover:bg-emerald-400 text-white px-4 rounded-xl text-[9px] font-black uppercase tracking-widest transition active:scale-95 italic-none">
@@ -420,44 +421,98 @@ window.renderBookingPage = async function(preServiceId = null, preMasterId = nul
         window.filterMastersByService(select, preMasterId);
     }
 };
-// Функція показу інпуту після кліку на зірочки
-window.showReviewInput = function(btn, rating, appointmentId) {
-    const parent = btn.closest('.review-container');
+
+Ось оновлена логіка. Я виправив проблему з кліком, додав інтерактивний ефект наведення (hover), щоб зірочки «загоралися» по черзі, та оновив запис у базу, використовуючи master_id.
+1. Оновлена частина history.map у renderProfilePage
+Заміни цей шматок коду у своїй функції. Я додав події onmouseenter та onmouseleave для кожної зірочки.
+code
+JavaScript
+2. Додай ці допоміжні функції в js/client-dashboard.js
+Цей код відповідає за візуальний ефект «загорання» зірочок при наведенні та фіксацію при кліку.
+code
+JavaScript
+// --- ЛОГІКА ІНТЕРФЕЙСУ ЗІРОЧОК ---
+
+// 1. Ефект наведення (підсвічує зірки до тієї, на яку навели)
+window.hoverStars = function(starEl, rating) {
+    const row = starEl.closest('.stars-row');
+    const stars = row.querySelectorAll('.fa-star');
+    stars.forEach((s, i) => {
+        s.classList.toggle('text-amber-500', i < rating);
+        s.classList.toggle('text-zinc-800', i >= rating);
+    });
+};
+
+// 2. Скидання підсвітки (якщо клієнт просто прибрав курсор, не клікнувши)
+window.resetStars = function(rowEl) {
+    const parent = rowEl.closest('.review-container');
     const inputBlock = parent.querySelector('.review-input-block');
     
-    // Підсвічуємо зірочки
-    const stars = parent.querySelectorAll('.fa-star');
-    stars.forEach((s, index) => {
-        s.classList.toggle('text-amber-500', index < rating);
-        s.classList.toggle('text-zinc-700', index >= rating);
-    });
+    // Якщо інпут уже відкритий (був клік), не скидаємо зірки
+    if (!inputBlock.classList.contains('hidden')) {
+        const savedRating = parseInt(inputBlock.dataset.rating);
+        const stars = rowEl.querySelectorAll('.fa-star');
+        stars.forEach((s, i) => {
+            s.classList.toggle('text-amber-500', i < savedRating);
+            s.classList.toggle('text-zinc-800', i >= savedRating);
+        });
+        return;
+    }
 
-    // Висуваємо інпут
-    inputBlock.classList.remove('hidden');
-    inputBlock.dataset.rating = rating;
+    // Якщо кліку не було — тушимо всі зірки
+    rowEl.querySelectorAll('.fa-star').forEach(s => {
+        s.classList.remove('text-amber-500');
+        s.classList.add('text-zinc-800');
+    });
 };
-// Відправка відгуку в базу
-window.submitReview = async function(btn, appointmentId) {
+
+// 3. Клік (фіксує рейтинг та відкриває інпут)
+window.showReviewInput = function(starEl, rating, appointmentId) {
+    const parent = starEl.closest('.review-container');
+    const inputBlock = parent.querySelector('.review-input-block');
+    
+    // Фіксуємо рейтинг в атрибуті блоку
+    inputBlock.dataset.rating = rating;
+    
+    // Показуємо поле для тексту
+    inputBlock.classList.remove('hidden');
+    
+    // Оновлюємо колір зірок (фінально)
+    const stars = parent.querySelectorAll('.fa-star');
+    stars.forEach((s, i) => {
+        s.classList.toggle('text-amber-500', i < rating);
+        s.classList.toggle('text-zinc-800', i >= rating);
+    });
+};
+// 4. Відправка в базу (з використанням master_id)
+window.submitReview = async function(btn, appointmentId, masterId) {
     const parent = btn.closest('.review-container');
-    const comment = parent.querySelector('input').value;
+    const input = parent.querySelector('input');
     const rating = parent.querySelector('.review-input-block').dataset.rating;
-    const clientId = localStorage.getItem('wella_glow_user_id');
+    const userId = localStorage.getItem('wella_glow_user_id');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch animate-spin"></i>';
 
     const { error } = await window.db.from('reviews').insert([{
-        client_id: clientId,
+        client_id: userId,
         appointment_id: appointmentId,
+        master_id: masterId, // Оновлено: використовуємо master_id замість імені
         rating: parseInt(rating),
-        comment: comment,
+        comment: input.value.trim(),
         created_at: new Date()
     }]);
 
     if (!error) {
-        // Мінімалізуємо: ховаємо форму, показуємо статус "Дякуємо"
-        parent.innerHTML = `
-            <div class="flex items-center gap-2 text-[9px] font-black text-emerald-500 uppercase tracking-widest animate-fade-in">
-                <i class="fa-solid fa-check-double"></i> Відгук залишено
+        parent.querySelector('.mt-4').innerHTML = `
+            <div class="flex items-center gap-2 text-[9px] font-black text-emerald-500 uppercase tracking-widest italic-none">
+                <i class="fa-solid fa-check-circle"></i> Дякуємо! Ваш відгук допоможе нам стати кращими ✨
             </div>
         `;
+    } else {
+        alert("Помилка: " + error.message);
+        btn.disabled = false;
+        btn.innerText = "OK";
     }
 };
 // --- 3. ЗАВАНТАЖЕННЯ ГРАФІКА МАЙСТРА ---
@@ -737,3 +792,36 @@ window.filterMastersByService = async function(selectEl) {
         if (masterEl) masterEl.click(); // Автоматично клікаємо по потрібному майстру
     }
 };
+// 1. Ефект наведення (підсвічує зірки до тієї, на яку навели)
+window.hoverStars = function(starEl, rating) {
+    const row = starEl.closest('.stars-row');
+    const stars = row.querySelectorAll('.fa-star');
+    stars.forEach((s, i) => {
+        s.classList.toggle('text-amber-500', i < rating);
+        s.classList.toggle('text-zinc-800', i >= rating);
+    });
+};
+
+// 2. Скидання підсвітки (якщо клієнт просто прибрав курсор, не клікнувши)
+window.resetStars = function(rowEl) {
+    const parent = rowEl.closest('.review-container');
+    const inputBlock = parent.querySelector('.review-input-block');
+    
+    // Якщо інпут уже відкритий (був клік), не скидаємо зірки
+    if (!inputBlock.classList.contains('hidden')) {
+        const savedRating = parseInt(inputBlock.dataset.rating);
+        const stars = rowEl.querySelectorAll('.fa-star');
+        stars.forEach((s, i) => {
+            s.classList.toggle('text-amber-500', i < savedRating);
+            s.classList.toggle('text-zinc-800', i >= savedRating);
+        });
+        return;
+    }
+
+    // Якщо кліку не було — тушимо всі зірки
+    rowEl.querySelectorAll('.fa-star').forEach(s => {
+        s.classList.remove('text-amber-500');
+        s.classList.add('text-zinc-800');
+    });
+};
+
