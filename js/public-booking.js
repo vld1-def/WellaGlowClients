@@ -11,7 +11,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateAuthUI();
     loadServices();
 });
-
+// --- ВІЗУАЛЬНИЙ ЕФЕКТ ВИБОРУ ---
+function highlightSelection(containerId, activeElement) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    // Знаходимо всі елементи всередині контейнера і знімаємо активний клас
+    container.querySelectorAll('.glass-panel, .master-selector').forEach(el => {
+        el.classList.remove('border-rose-500', 'bg-rose-500/5');
+    });
+    // Додаємо активний клас натиснутому елементу
+    activeElement.classList.add('border-rose-500', 'bg-rose-500/5');
+}
 // Перевірка чи залогінений (для кнопки в хедері)
 function updateAuthUI() {
     const userId = localStorage.getItem('wella_glow_user_id');
@@ -43,21 +53,21 @@ async function loadServices() {
 }
 
 // Вибір послуги -> Відкриваємо майстрів
-window.selectService = async function(id, name, price) {
+window.selectService = async function(id, name, price, element) {
     bookingData.service = { id, name, price };
+    highlightSelection('services-grid', element); // ПІДСВІТКА
     updateSummary();
     
     document.getElementById('step-masters').classList.remove('hidden');
     const grid = document.getElementById('masters-grid');
     grid.innerHTML = '<p class="col-span-full text-center animate-pulse text-[10px] uppercase font-black py-10">Шукаємо вільних майстрів...</p>';
 
-    // Плавний скрол до наступного кроку
     document.getElementById('step-masters').scrollIntoView({ behavior: 'smooth' });
 
     const { data: masters } = await window.db.from('staff_services').select('staff(*)').eq('service_id', id);
     
     grid.innerHTML = masters.map(m => `
-        <div onclick="selectMaster('${m.staff.id}', '${m.staff.name}')" class="glass-panel p-6 rounded-3xl text-center cursor-pointer hover:border-rose-500 transition">
+        <div onclick="selectMaster('${m.staff.id}', '${m.staff.name}', this)" class="master-selector glass-panel p-6 rounded-3xl text-center cursor-pointer hover:border-rose-500 transition border border-white/5">
             <img src="https://ui-avatars.com/api/?name=${m.staff.name.replace(' ','+')}&background=111113&color=fff" class="w-12 h-12 rounded-full mx-auto mb-3">
             <p class="text-xs font-bold text-white">${m.staff.name}</p>
             <p class="text-[8px] text-zinc-600 uppercase mt-1">${m.staff.role}</p>
@@ -66,13 +76,13 @@ window.selectService = async function(id, name, price) {
 }
 
 // Вибір майстра -> Відкриваємо календар
-window.selectMaster = function(id, name) {
+window.selectMaster = function(id, name, element) {
     bookingData.master = { id, name };
+    highlightSelection('masters-grid', element); // ПІДСВІТКА
     updateSummary();
     document.getElementById('step-time').classList.remove('hidden');
     document.getElementById('step-time').scrollIntoView({ behavior: 'smooth' });
-    // Тут логіка рендеру календаря (таку як ми робили в дашборді)
-    renderPublicCalendar(id);
+    window.renderPublicCalendar(id);
 }
 
 function updateSummary() {
@@ -104,16 +114,13 @@ function updateSummary() {
 // ФІНАЛЬНИЙ КРОК
 window.handleFinalConfirm = function() {
     const userId = localStorage.getItem('wella_glow_user_id');
-    
-    // Зберігаємо поточний вибір у сесію, щоб не загубити після логіну
-    sessionStorage.setItem('pending_booking', JSON.stringify(bookingData));
 
     if (!userId) {
-        alert("Майже готово! Будь ласка, увійдіть у свій профіль, щоб ми знали, на чиє ім'я створити запис.");
-        location.href = 'login.html';
+        // Якщо не залогінений — замість редіректу малюємо форму в лівій колонці
+        renderInlineAuth();
     } else {
-        // Якщо залогінений - відправляємо в базу (confirmBooking)
-        confirmBookingInDatabase();
+        // Якщо залогінений — відправляємо в базу
+        confirmBookingInDatabase(userId);
     }
 }
 // --- 1. ГОЛОВНА ФУНКЦІЯ КАЛЕНДАРЯ ---
@@ -237,3 +244,78 @@ window.selectPublicTime = function(el, time) {
     bookingData.time = time;
     updateSummary();
 };
+function renderInlineAuth() {
+    const stepServices = document.getElementById('step-services');
+    const stepMasters = document.getElementById('step-masters');
+    const stepTime = document.getElementById('step-time');
+
+    // Ховаємо попередні кроки для фокусу на авторизації
+    [stepServices, stepMasters, stepTime].forEach(el => el.classList.add('opacity-20', 'pointer-events-none'));
+
+    // Створюємо нову секцію авторизації
+    const authSection = document.createElement('section');
+    authSection.id = 'inline-auth-step';
+    authSection.className = 'glass-panel p-10 rounded-[3rem] border-t-4 border-t-rose-500 animate-fade-in mt-10';
+    authSection.innerHTML = `
+        <h2 class="text-2xl font-black text-white uppercase tracking-tighter mb-2">Останній крок</h2>
+        <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-8 leading-none">Увійдіть або зареєструйтесь для підтвердження</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <!-- Вхід -->
+            <div class="space-y-4">
+                <p class="text-[9px] font-black text-white uppercase tracking-widest border-b border-white/5 pb-2">У мене є акаунт</p>
+                <input type="tel" id="inlinePhone" placeholder="Номер телефону" class="input-dark">
+                <input type="password" id="inlinePass" placeholder="Пароль" class="input-dark">
+                <button onclick="processInlineLogin()" class="w-full py-3 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest transition">Увійти</button>
+            </div>
+            
+            <!-- Реєстрація -->
+            <div class="space-y-4 border-l border-white/5 pl-10">
+                <p class="text-[9px] font-black text-white uppercase tracking-widest border-b border-white/5 pb-2">Я тут вперше</p>
+                <input type="text" id="inlineName" placeholder="Прізвище та Ім'я" class="input-dark">
+                <input type="tel" id="inlineNewPhone" placeholder="Номер телефону" class="input-dark">
+                <input type="password" id="inlineNewPass" placeholder="Придумати пароль" class="input-dark">
+                <button onclick="processInlineRegister()" class="neo-gradient w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest text-white shadow-xl">Створити та записатись</button>
+            </div>
+        </div>
+    `;
+
+    document.querySelector('.lg:col-span-2').appendChild(authSection);
+    authSection.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Логіка входу прямо в процесі
+window.processInlineLogin = async function() {
+    const phone = document.getElementById('inlinePhone').value;
+    const pass = document.getElementById('inlinePass').value;
+
+    const { data, error } = await window.db.from('clients').select('id').eq('phone', phone).eq('password', pass).single();
+
+    if (data) {
+        localStorage.setItem('wella_glow_user_id', data.id);
+        confirmBookingInDatabase(data.id);
+    } else {
+        alert("Невірні дані для входу");
+    }
+}
+
+// Функція запису в базу ( appointments )
+async function confirmBookingInDatabase(userId) {
+    const { error } = await window.db.from('appointments').insert([{
+        client_id: userId,
+        master_id: bookingData.master.id,
+        service_id: bookingData.service.id,
+        service_name: bookingData.service.name,
+        appointment_date: bookingData.date,
+        appointment_time: bookingData.time,
+        price: bookingData.service.price,
+        status: 'waiting'
+    }]);
+
+    if (!error) {
+        alert("Запис успішно створено! ✨");
+        window.location.href = 'client-dashboard.html';
+    } else {
+        alert("Помилка: " + error.message);
+    }
+}
