@@ -73,6 +73,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('wella_glow_user_id', data[0].id);
                 window.location.href = 'client-dashboard.html';
             }
+            if (data && data[0]) {
+                const userId = data[0].id;
+                await window.db.from('bonus_history').insert([{
+                    client_id: userId,
+                    amount: 500,
+                    type: 'accrual',
+                    reason: 'WELCOME BONUS',
+                    created_at: new Date()
+                }]);
+            }
 
         } catch (error) {
             console.error('Supabase Error:', error.message);
