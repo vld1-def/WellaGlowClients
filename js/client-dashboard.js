@@ -257,7 +257,7 @@ window.renderProfilePage = async function() {
                                 </div>
 
                                 <div class="review-input-block hidden mt-3 pt-3 border-t border-white/5 italic-none">
-                                    <div class="flex flex-wrap gap-2 mb-3 italic-none">
+                                    <div class="quick-replies flex flex-wrap gap-2 mb-3 italic-none">
                                         <button onclick="window.setQuickText(this, 'Все чудово!')" class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[9px] font-bold text-zinc-400 hover:text-white transition italic-none">Все чудово!</button>
                                         <button onclick="window.setQuickText(this, 'Дуже задоволена')" class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[9px] font-bold text-zinc-400 hover:text-white transition italic-none">Дуже задоволена</button>
                                         <button onclick="window.setQuickText(this, 'Чудовий майстер')" class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[9px] font-bold text-zinc-400 hover:text-white transition italic-none">Чудовий майстер</button>
@@ -441,28 +441,32 @@ window.resetStars = function(rowEl) {
 // 3. Клік (фіксує рейтинг та відкриває інпут)
 window.showReviewInput = function(starEl, rating, appointmentId) {
     const parent = starEl.closest('.review-container');
+    if (!parent) return;
+
     const inputBlock = parent.querySelector('.review-input-block');
-    const quickReplies = parent.querySelector('.quick-replies'); // Блок з кнопками
+    const quickReplies = parent.querySelector('.quick-replies');
     const stars = parent.querySelectorAll('.fa-star');
 
-    // 1. Візуально підсвічуємо зірочки
+    // 1. Підсвічуємо зірочки
     stars.forEach((s, i) => {
         s.classList.toggle('text-amber-500', i < rating);
         s.classList.toggle('text-zinc-800', i >= rating);
     });
 
-    // 2. Фіксуємо рейтинг в атрибуті блоку
-    inputBlock.dataset.rating = rating;
-    
-    // 3. ПОКАЗУЄМО/ХОВАЄМО ШВИДКІ ВІДГУКИ
-    if (rating >= 4) {
-        quickReplies.classList.remove('hidden');
-    } else {
-        quickReplies.classList.add('hidden');
+    // 2. Показуємо блок вводу
+    if (inputBlock) {
+        inputBlock.classList.remove('hidden');
+        inputBlock.dataset.rating = rating;
     }
     
-    // 4. Показуємо загальний блок вводу
-    inputBlock.classList.remove('hidden');
+    // 3. Перевіряємо рейтинг для швидких відповідей
+    if (quickReplies) {
+        if (rating >= 4) {
+            quickReplies.classList.remove('hidden');
+        } else {
+            quickReplies.classList.add('hidden');
+        }
+    }
 };
 // 4. Відправка в базу (з використанням master_id)
 // Відправка відгуку
