@@ -239,29 +239,28 @@ window.renderProfilePage = async function() {
                             const hasReview = reviews.some(r => r.appointment_id === h.id);
 
                            return `
-                            <div class="review-container flex flex-col mb-6">
-                                <div class="flex justify-between items-center group">
-                                    <div class="flex items-center gap-4">
+                            <div class="review-container flex flex-col p-4 bg-white/2 border border-white/5 rounded-2xl group hover:border-white/10 transition mb-3">
+                                <div class="flex items-center justify-between gap-4">
+                                    
+                                    <!-- Ліворуч: Іконка дати та Інфо -->
+                                    <div class="flex items-center gap-4 shrink-0">
                                         <div class="w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center font-bold text-xs text-zinc-500 uppercase italic-none">
                                             ${new Date(h.visit_date).toLocaleDateString('uk-UA', {day: '2-digit', month: '2-digit'})}
                                         </div>
-                                        <div>
+                                        <div class="min-w-[120px]">
                                             <p class="text-sm font-bold text-white tracking-tight leading-none italic-none">${h.services?.name || 'Послуга'}</p>
                                             <p class="text-[10px] text-zinc-500 mt-1 font-medium italic-none">Майстер: ${h.staff?.name || 'Майстер'} • ₴${h.price}</p>
                                         </div>
                                     </div>
-                                    <button onclick="window.renderBookingPage('${h.service_id}', '${h.master_id}')" class="px-4 py-2 border border-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-white/5 transition italic-none">Повторити</button>
-                                </div>
                             
-                                <!-- СЕКЦІЯ ВІДГУКУ -->
-                                <div class="mt-4 pt-4 border-t border-white/5">
-                                    ${hasReview ? `
-                                        <div class="flex items-center gap-2 text-[9px] font-black text-emerald-500 uppercase tracking-widest italic-none">
-                                            <i class="fa-solid fa-check-circle"></i> Відгук залишено
-                                        </div>
-                                    ` : `
-                                        <div class="flex items-center gap-3">
-                                            <span class="text-[8px] font-black text-zinc-600 uppercase tracking-widest italic-none">Ваша оцінка:</span>
+                                    <!-- Посередині: Зірочки оцінки -->
+                                    <div class="flex flex-col items-center justify-center flex-1">
+                                        ${hasReview ? `
+                                            <div class="flex items-center gap-1.5 text-emerald-500/40">
+                                                <i class="fa-solid fa-check-double text-[10px]"></i>
+                                                <span class="text-[8px] font-black uppercase tracking-widest italic-none">Оцінено</span>
+                                            </div>
+                                        ` : `
                                             <div class="flex gap-1.5 stars-row" onmouseleave="window.resetStars(this)">
                                                 ${[1, 2, 3, 4, 5].map(star => `
                                                     <i class="fa-solid fa-star text-zinc-800 text-[10px] cursor-pointer transition duration-200" 
@@ -269,18 +268,26 @@ window.renderProfilePage = async function() {
                                                        onclick="window.showReviewInput(this, ${star}, '${h.id}')"></i>
                                                 `).join('')}
                                             </div>
-                                        </div>
-                                        <div class="review-input-block hidden mt-3">
-                                            <div class="flex gap-2">
-                                                <input type="text" placeholder="Що вам сподобалось?" 
-                                                       class="input-dark flex-1 !py-2 !px-4 !text-[11px] italic-none">
-                                                <button onclick="window.submitReview(this, '${h.id}', '${h.master_id}')" 
-                                                        class="bg-emerald-500 hover:bg-emerald-400 text-white px-4 rounded-xl text-[9px] font-black uppercase tracking-widest transition active:scale-95 italic-none">
-                                                    OK
-                                                </button>
-                                            </div>
-                                        </div>
-                                    `}
+                                        `}
+                                    </div>
+                            
+                                    <!-- Праворуч: Кнопка повтору -->
+                                    <button onclick="window.renderBookingPage('${h.service_id}', '${h.master_id}')" 
+                                            class="px-4 py-2 border border-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-white/5 transition italic-none shrink-0">
+                                        Повторити
+                                    </button>
+                                </div>
+                            
+                                <!-- Інпут відгуку (з'являється під рядком лише після кліку на зірку) -->
+                                <div class="review-input-block hidden mt-3 pt-3 border-t border-white/5 animate-fade-in">
+                                    <div class="flex gap-2">
+                                        <input type="text" placeholder="Ваш коментар (необов'язково)..." 
+                                               class="input-dark flex-1 !py-1.5 !px-3 !text-[10px] italic-none">
+                                        <button onclick="window.submitReview(this, '${h.id}', '${h.master_id}')" 
+                                                class="bg-emerald-500 hover:bg-emerald-400 text-white px-3 rounded-lg text-[9px] font-black uppercase tracking-widest transition active:scale-95 italic-none">
+                                            OK
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             `;
@@ -493,11 +500,13 @@ window.submitReview = async function(btn, appointmentId, masterId) {
     }]);
 
     if (!error) {
-        parent.querySelector('.mt-4').innerHTML = `
-            <div class="flex items-center gap-2 text-[9px] font-black text-emerald-500 uppercase tracking-widest italic-none">
-                <i class="fa-solid fa-check-circle"></i> Дякуємо! Ваш відгук допоможе нам стати кращими ✨
-            </div>
-        `;
+    // Знаходимо контейнер, де були зірки та інпут, і замінюємо на статус "Оцінено"
+    const reviewSection = parent.querySelector('.stars-row')?.parentElement || parent;
+    parent.innerHTML = `
+        <div class="flex items-center justify-center gap-2 text-[9px] font-black text-emerald-500 uppercase tracking-widest animate-fade-in italic-none py-2">
+            <i class="fa-solid fa-check-double"></i> Дякуємо за оцінку!
+        </div>
+    `;
     } else {
         alert("Помилка: " + error.message);
         btn.disabled = false;
