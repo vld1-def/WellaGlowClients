@@ -34,12 +34,15 @@ function updateAuthUI() {
 }
 
 // Завантаження послуг
+// Знайти цю функцію в js/public-booking.js
 async function loadServices() {
     const { data: services } = await window.db.from('services').select('*').order('category');
     const grid = document.getElementById('services-grid');
     
     grid.innerHTML = services.map(s => `
-        <div onclick="selectService('${s.id}', '${s.name}', ${s.price})" class="glass-panel p-5 rounded-2xl flex justify-between items-center cursor-pointer hover:border-rose-500/50 transition group">
+        <!-- Ось цей рядок нижче! Додаємо "this" як четвертий параметр -->
+        <div onclick="selectService('${s.id}', '${s.name}', ${s.price}, this)" 
+             class="glass-panel p-5 rounded-2xl flex justify-between items-center cursor-pointer hover:border-rose-500/50 transition border border-white/5 group">
             <div>
                 <p class="text-sm font-bold text-white group-hover:text-rose-500 transition">${s.name}</p>
                 <p class="text-[10px] text-zinc-600 uppercase font-black mt-1">${s.duration} хв</p>
