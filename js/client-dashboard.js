@@ -851,65 +851,83 @@ window.renderBonusPage = async function() {
     const main = document.querySelector('main');
     const userId = localStorage.getItem('wella_glow_user_id');
 
-    const [clientRes, bonusHistoryRes, programsRes] = await Promise.all([
+    // 1. Отримуємо дані (Клієнт, Транзакції, Програми, Історія візитів для підрахунку)
+    const [clientRes, bonusHistoryRes, programsRes, visitHistoryRes] = await Promise.all([
         window.db.from('clients').select('*').eq('id', userId).single(),
         window.db.from('bonus_history').select('*').eq('client_id', userId).order('created_at', { ascending: false }),
-        window.db.from('bonus_programs').select('*').eq('is_active', true).order('required_ltv', { ascending: true })
+        window.db.from('bonus_programs').select('*').eq('is_active', true).order('required_visits', { ascending: true }),
+        window.db.from('appointment_history').select('*, services(category)').eq('client_id', userId)
     ]);
 
     const client = clientRes.data;
-    const history = bonusHistoryRes.data || [];
+    const bonusHistory = bonusHistoryRes.data || [];
     const programs = programsRes.data || [];
-    const userLtv = client?.ltv || 0;
+    const visitHistory = visitHistoryRes.data || [];
+
+    // 2. Рахуємо KPI бонусів
+    const balance = client?.bonuses || 0;
+    const totalEarned = bonusHistory.filter(t => t.amount > 0).reduce((sum, t) => sum + t.amount, 0);
+    const totalSpent = Math.abs(bonusHistory.filter(t => t.amount < 0).reduce((sum, t) => sum + t.amount, 0));
+
+    // 3. Функція для підрахунку візитів за категорією
+    const countVisits = (category = null) => {
+        if (!category) return visitHistory.length;
+        return visitHistory.filter(h => h.services?.category === category).length;
+    };
 
     main.innerHTML = `
         <header class="flex justify-between items-center mb-10">
             <div>
                 <h2 class="text-2xl font-extrabold text-white tracking-tight leading-none italic-none uppercase">Бонусна програма</h2>
-                <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2 leading-none italic-none">Керування привілеями Wella Glow</p>
+                <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2 leading-none italic-none">Твої накопичення та привілеї</p>
             </div>
             <div class="px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                <span class="text-[10px] font-black text-amber-500 uppercase tracking-widest italic-none">1 бал = 1 ₴</span>
+                <span class="text-[10px] font-black text-amber-500 uppercase tracking-widest italic-none">Glow Loyalty</span>
             </div>
         </header>
 
+        <!-- KPI БЛОКИ (ПОВЕРНУТО) -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-rose-500">
-                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Доступно</p>
-                <h3 class="text-3xl font-black text-white italic-none tracking-tighter">${(client?.bonuses || 0).toLocaleString()}</h3>
+            <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-rose-500 shadow-xl">
+                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Доступно зараз</p>
+                <h3 class="text-3xl font-black text-white italic-none tracking-tighter">${balance.toLocaleString()}</h3>
+            </div>
+            <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-emerald-500">
+                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Нараховано всього</p>
+                <h3 class="text-3xl font-black text-white italic-none tracking-tighter">${totalEarned.toLocaleString()}</h3>
             </div>
             <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-zinc-700">
-                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Твій LTV</p>
-                <h3 class="text-3xl font-black text-white italic-none tracking-tighter">₴${userLtv.toLocaleString()}</h3>
+                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Витрачено балів</p>
+                <h3 class="text-3xl font-black text-zinc-500 italic-none tracking-tighter">${totalSpent.toLocaleString()}</h3>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- ПРОГРАМИ З УМОВАМИ З БАЗИ -->
+            
+            <!-- ЛІВА КОЛОНКА: ПРОГРАМИ ВІЗИТІВ -->
             <div class="lg:col-span-1 space-y-6">
-                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-4 italic-none">Доступні привілеї</h4>
+                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-4 italic-none">Статус привілеїв</h4>
                 
                 ${programs.map(p => {
+                    const currentVisits = countVisits(p.service_category);
+                    const isLocked = currentVisits < p.required_visits;
+                    
                     let statusText = 'Активний';
                     let statusClass = 'text-emerald-500 bg-emerald-500/10';
-                    let isLocked = false;
 
-                    // 1. Перевірка LTV (Умова з бази)
-                    if (userLtv < p.required_ltv) {
-                        statusText = 'Недоступно';
-                        statusClass = 'text-zinc-600 bg-zinc-800';
-                        isLocked = true;
-                    }
-
-                    // 2. Перевірка разових бонусів (Тип з бази)
-                    const alreadyReceived = history.some(t => t.reason.toUpperCase() === p.name.toUpperCase());
-                    if (p.program_type === 'once' && alreadyReceived) {
+                    // Перевірка на разовий бонус (напр. Welcome)
+                    const alreadyGot = bonusHistory.some(t => t.reason.toUpperCase() === p.name.toUpperCase());
+                    
+                    if (p.program_type === 'once' && alreadyGot) {
                         statusText = 'Нараховано';
                         statusClass = 'text-blue-400 bg-blue-400/10';
+                    } else if (isLocked) {
+                        statusText = 'Недоступно';
+                        statusClass = 'text-zinc-600 bg-zinc-800';
                     }
 
                     return `
-                    <div class="glass-panel p-6 rounded-[2.5rem] relative overflow-hidden border border-white/5 ${isLocked ? 'opacity-40 grayscale' : ''} transition duration-500">
+                    <div class="glass-panel p-6 rounded-[2.5rem] relative overflow-hidden border border-white/5 ${isLocked ? 'opacity-40 grayscale' : ''} transition-all duration-500 group">
                         <div class="flex justify-between items-start mb-4">
                             <span class="px-2 py-1 rounded text-[8px] font-black uppercase tracking-widest ${statusClass} italic-none">
                                 ${statusText}
@@ -920,34 +938,42 @@ window.renderBonusPage = async function() {
                         <p class="text-[11px] text-zinc-500 font-medium leading-relaxed italic-none">${p.description}</p>
                         
                         ${isLocked ? `
-                            <p class="mt-4 text-[9px] text-rose-500 font-bold uppercase italic-none">Потрібно ще ₴${(p.required_ltv - userLtv).toLocaleString()}</p>
+                            <div class="mt-4 space-y-2">
+                                <div class="flex justify-between text-[9px] font-black uppercase text-rose-500 italic-none">
+                                    <span>Прогрес</span>
+                                    <span>${currentVisits} / ${p.required_visits} візитів</span>
+                                </div>
+                                <div class="h-1 w-full bg-zinc-900 rounded-full overflow-hidden">
+                                    <div class="h-full bg-rose-500" style="width: ${(currentVisits / p.required_visits) * 100}%"></div>
+                                </div>
+                            </div>
                         ` : ''}
                     </div>
                     `;
                 }).join('')}
             </div>
 
-            <!-- ІСТОРІЯ ТРАНЗАКЦІЙ -->
+            <!-- ПРАВА КОЛОНКА: ІСТОРІЯ ТРАНЗАКЦІЙ -->
             <div class="lg:col-span-2">
-                <div class="glass-panel p-8 rounded-[3rem]">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none italic-none">Рух балів</h4>
+                <div class="glass-panel p-8 rounded-[3rem] shadow-2xl">
+                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none italic-none">Історія операцій</h4>
                     <div class="space-y-4">
-                        ${history.length > 0 ? history.map(t => `
-                            <div class="flex items-center justify-between p-4 bg-white/2 rounded-2xl border border-white/5">
+                        ${bonusHistory.length > 0 ? bonusHistory.map(t => `
+                            <div class="flex items-center justify-between p-4 bg-white/2 rounded-2xl border border-white/5 group hover:border-white/10 transition">
                                 <div class="flex items-center gap-4">
                                     <div class="w-10 h-10 rounded-xl bg-zinc-900 border border-white/5 flex items-center justify-center">
                                         <i class="fa-solid ${t.amount > 0 ? 'fa-plus text-emerald-500' : 'fa-minus text-rose-500'} text-[10px]"></i>
                                     </div>
                                     <div>
                                         <p class="text-xs font-bold text-white tracking-tight italic-none">${t.reason}</p>
-                                        <p class="text-[9px] text-zinc-600 font-black uppercase mt-1 italic-none">${new Date(t.created_at).toLocaleDateString('uk-UA')}</p>
+                                        <p class="text-[9px] text-zinc-600 font-black uppercase mt-1 tracking-tighter italic-none">${new Date(t.created_at).toLocaleDateString('uk-UA')} • ${new Date(t.created_at).toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'})}</p>
                                     </div>
                                 </div>
                                 <p class="text-sm font-black ${t.amount > 0 ? 'text-emerald-400' : 'text-zinc-500'} italic-none">
                                     ${t.amount > 0 ? '+' : ''}${t.amount}
                                 </p>
                             </div>
-                        `).join('') : '<p class="text-zinc-700 text-[10px] font-black uppercase text-center py-20 italic-none">Транзакцій не знайдено</p>'}
+                        `).join('') : '<p class="text-zinc-700 text-[10px] font-black uppercase text-center py-20 italic-none">Транзакцій поки немає</p>'}
                     </div>
                 </div>
             </div>
