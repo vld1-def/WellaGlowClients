@@ -116,3 +116,124 @@ window.handleFinalConfirm = function() {
         confirmBookingInDatabase();
     }
 }
+// --- 1. ГОЛОВНА ФУНКЦІЯ КАЛЕНДАРЯ ---
+window.renderPublicCalendar = async function(masterId) {
+    const grid = document.getElementById('calendar-grid');
+    const slotsGrid = document.getElementById('slots-grid');
+    
+    grid.innerHTML = '<p class="col-span-7 text-center animate-pulse text-[10px] uppercase font-black py-5">Завантаження графіка...</p>';
+    slotsGrid.innerHTML = '';
+
+    // Отримуємо робочі дні майстра
+    const { data: shifts, error } = await window.db
+        .from('staff_shifts')
+        .select('shift_date')
+        .eq('staff_id', masterId);
+
+    if (error) {
+        grid.innerHTML = '<p class="col-span-7 text-rose-500 text-[10px]">Помилка завантаження дат</p>';
+        return;
+    }
+
+    const availableDates = shifts.map(s => s.shift_date);
+    grid.innerHTML = '';
+
+    // Назви днів тижня
+    const daysHeader = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
+    daysHeader.forEach(d => grid.innerHTML += `<div class="text-[9px] font-black text-zinc-600 uppercase mb-2">${d}</div>`);
+
+    const today = new Date();
+    
+    // Генеруємо 14 днів вперед
+    for (let i = 0; i < 14; i++) {
+        const date = new Date();
+        date.setDate(today.getDate() + i);
+
+        // Форматуємо дату в локальний YYYY-MM-DD (щоб не було зсуву +1)
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`; 
+
+        const isAvailable = availableDates.includes(dateStr);
+        
+        grid.innerHTML += `
+            <button 
+                onclick="${isAvailable ? `window.selectPublicDate(this, '${dateStr}')` : ''}" 
+                class="calendar-day p-3 rounded-xl text-[11px] font-black border border-white/5 transition
+                ${isAvailable ? 'bg-white/5 text-white hover:border-rose-500' : 'opacity-10 cursor-not-allowed'}"
+                ${!isAvailable ? 'disabled' : ''}>
+                ${date.getDate()}
+            </button>
+        `;
+    }
+};
+
+// --- 2. ВИБІР ДАТИ ТА ПЕРЕВІРКА ЧАСУ ---
+window.selectPublicDate = async function(el, date) {
+    // Стилізація вибраної дати
+    document.querySelectorAll('.calendar-day').forEach(d => {
+        d.classList.remove('bg-rose-500', 'text-white');
+        d.classList.add('bg-white/5');
+    });
+    el.classList.add('bg-rose-500', 'text-white');
+    el.classList.remove('bg-white/5');
+
+    bookingData.date = date;
+    bookingData.time = null; // скидаємо час при зміні дати
+    updateSummary();
+
+    const slotsGrid = document.getElementById('slots-grid');
+    slotsGrid.innerHTML = '<p class="col-span-4 text-center animate-pulse text-[10px] uppercase font-black py-5">Перевірка вільного часу...</p>';
+
+    try {
+        // Отримуємо зміну майстра та вже існуючі записи
+        const [shiftRes, bookedRes] = await Promise.all([
+            window.db.from('staff_shifts').select('start_time, end_time').eq('staff_id', bookingData.master.id).eq('shift_date', date).single(),
+            window.db.from('appointments').select('appointment_time').eq('master_id', bookingData.master.id).eq('appointment_date', date).neq('status', 'rejected')
+        ]);
+
+        if (!shiftRes.data) {
+            slotsGrid.innerHTML = '<p class="col-span-4 text-rose-500 text-[10px] font-black uppercase text-center">Майстер не працює в цей день</p>';
+            return;
+        }
+
+        // Генерація слотів (наприклад з 10:00 до 20:00 кожну годину)
+        const start = parseInt(shiftRes.data.start_time.split(':')[0]);
+        const end = parseInt(shiftRes.data.end_time.split(':')[0]);
+        const bookedTimes = bookedRes.data.map(b => b.appointment_time.substring(0, 5));
+
+        slotsGrid.innerHTML = '';
+        for (let hour = start; hour < end; hour++) {
+            const timeStr = `${hour}:00`.padStart(5, '0');
+            const isBooked = bookedTimes.includes(timeStr);
+
+            slotsGrid.innerHTML += `
+                <button 
+                    onclick="${isBooked ? '' : `window.selectPublicTime(this, '${timeStr}')`}" 
+                    class="time-slot p-2 rounded-lg border border-white/5 text-[10px] font-black transition
+                    ${isBooked ? 'opacity-10 cursor-not-allowed bg-zinc-900' : 'bg-white/5 hover:border-rose-500 text-zinc-400'}"
+                    ${isBooked ? 'disabled' : ''}>
+                    ${timeStr}
+                </button>
+            `;
+        }
+
+    } catch (e) {
+        console.error(e);
+        slotsGrid.innerHTML = '<p class="col-span-4 text-rose-500 text-[10px]">Помилка завантаження часу</p>';
+    }
+};
+
+// --- 3. ВИБІР КОНКРЕТНОГО ЧАСУ ---
+window.selectPublicTime = function(el, time) {
+    document.querySelectorAll('.time-slot').forEach(t => {
+        t.classList.remove('bg-rose-500', 'text-white');
+        t.classList.add('bg-white/5', 'text-zinc-400');
+    });
+    el.classList.add('bg-rose-500', 'text-white');
+    el.classList.remove('bg-white/5', 'text-zinc-400');
+
+    bookingData.time = time;
+    updateSummary();
+};
