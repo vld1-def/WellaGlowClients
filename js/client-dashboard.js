@@ -851,74 +851,61 @@ window.renderBonusPage = async function() {
     const main = document.querySelector('main');
     const userId = localStorage.getItem('wella_glow_user_id');
 
-    // 1. Отримуємо дані
     const [clientRes, bonusHistoryRes, programsRes] = await Promise.all([
         window.db.from('clients').select('*').eq('id', userId).single(),
         window.db.from('bonus_history').select('*').eq('client_id', userId).order('created_at', { ascending: false }),
-        window.db.from('bonus_programs').select('*').eq('is_active', true)
+        window.db.from('bonus_programs').select('*').eq('is_active', true).order('required_ltv', { ascending: true })
     ]);
 
     const client = clientRes.data;
     const history = bonusHistoryRes.data || [];
     const programs = programsRes.data || [];
-    const balance = client?.bonuses || 0;
-
-    // Рахуємо сумарну статистику для карток
-    const totalEarned = history.filter(t => t.amount > 0).reduce((sum, t) => sum + t.amount, 0);
-    const totalSpent = Math.abs(history.filter(t => t.amount < 0).reduce((sum, t) => sum + t.amount, 0));
+    const userLtv = client?.ltv || 0;
 
     main.innerHTML = `
         <header class="flex justify-between items-center mb-10">
             <div>
-                <h2 class="text-2xl font-extrabold text-white tracking-tight leading-none italic-none">Бонусна програма</h2>
-                <p class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest mt-2 leading-none italic-none">Твоя персональна система привілеїв</p>
+                <h2 class="text-2xl font-extrabold text-white tracking-tight leading-none italic-none uppercase">Бонусна програма</h2>
+                <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2 leading-none italic-none">Керування привілеями Wella Glow</p>
             </div>
-            <div class="px-5 py-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                <span class="text-[11px] font-black text-amber-500 tracking-tighter italic-none uppercase">Glow Loyalty Club</span>
+            <div class="px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                <span class="text-[10px] font-black text-amber-500 uppercase tracking-widest italic-none">1 бал = 1 ₴</span>
             </div>
         </header>
 
-        <!-- KPI БЛОК -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-rose-500">
-                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Доступний баланс</p>
-                <h3 class="text-3xl font-black text-white italic-none tracking-tighter">${balance.toLocaleString()}</h3>
-            </div>
-            <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-emerald-500">
-                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Зароблено всього</p>
-                <h3 class="text-3xl font-black text-white italic-none tracking-tighter">${totalEarned.toLocaleString()}</h3>
+                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Доступно</p>
+                <h3 class="text-3xl font-black text-white italic-none tracking-tighter">${(client?.bonuses || 0).toLocaleString()}</h3>
             </div>
             <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-zinc-700">
-                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Використано балів</p>
-                <h3 class="text-3xl font-black text-zinc-500 italic-none tracking-tighter">${totalSpent.toLocaleString()}</h3>
+                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Твій LTV</p>
+                <h3 class="text-3xl font-black text-white italic-none tracking-tighter">₴${userLtv.toLocaleString()}</h3>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- ЛІВА КОЛОНКА: ПРОГРАМИ -->
+            <!-- ПРОГРАМИ З УМОВАМИ З БАЗИ -->
             <div class="lg:col-span-1 space-y-6">
-                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-4 italic-none">Статус програм</h4>
+                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-4 italic-none">Доступні привілеї</h4>
                 
                 ${programs.map(p => {
-                    // --- ЛОГІКА ВИЗНАЧЕННЯ СТАТУСУ ---
                     let statusText = 'Активний';
                     let statusClass = 'text-emerald-500 bg-emerald-500/10';
                     let isLocked = false;
 
-                    // 1. Перевіряємо, чи це WELCOME і чи він уже був нарахований
-                    const alreadyGotWelcome = history.some(t => t.reason.toUpperCase().includes('WELCOME'));
-                    if (p.name.toUpperCase().includes('WELCOME')) {
-                        if (alreadyGotWelcome) {
-                            statusText = 'Нараховано';
-                            statusClass = 'text-blue-400 bg-blue-400/10';
-                        }
-                    }
-
-                    // 2. Перевіряємо умови доступності (наприклад для VIP програм)
-                    if (p.name.toUpperCase().includes('VIP') && (client?.ltv || 0) < 15000) {
+                    // 1. Перевірка LTV (Умова з бази)
+                    if (userLtv < p.required_ltv) {
                         statusText = 'Недоступно';
                         statusClass = 'text-zinc-600 bg-zinc-800';
                         isLocked = true;
+                    }
+
+                    // 2. Перевірка разових бонусів (Тип з бази)
+                    const alreadyReceived = history.some(t => t.reason.toUpperCase() === p.name.toUpperCase());
+                    if (p.program_type === 'once' && alreadyReceived) {
+                        statusText = 'Нараховано';
+                        statusClass = 'text-blue-400 bg-blue-400/10';
                     }
 
                     return `
@@ -932,42 +919,35 @@ window.renderBonusPage = async function() {
                         <p class="text-xs font-black text-white uppercase tracking-tight mb-2 italic-none">${p.name}</p>
                         <p class="text-[11px] text-zinc-500 font-medium leading-relaxed italic-none">${p.description}</p>
                         
-                        ${p.reward_amount && !alreadyGotWelcome ? `
-                            <p class="mt-4 text-sm font-black text-rose-500 italic-none">+ ${p.reward_amount} балів</p>
-                        ` : ''}
-                        
                         ${isLocked ? `
-                            <p class="mt-4 text-[9px] text-zinc-500 font-bold uppercase italic-none">Потрібно ще ₴${(15000 - client.ltv).toLocaleString()} LTV</p>
+                            <p class="mt-4 text-[9px] text-rose-500 font-bold uppercase italic-none">Потрібно ще ₴${(p.required_ltv - userLtv).toLocaleString()}</p>
                         ` : ''}
                     </div>
                     `;
                 }).join('')}
             </div>
 
-            <!-- ПРАВА КОЛОНКА: ІСТОРІЯ -->
+            <!-- ІСТОРІЯ ТРАНЗАКЦІЙ -->
             <div class="lg:col-span-2">
                 <div class="glass-panel p-8 rounded-[3rem]">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none italic-none">Детальна історія транзакцій</h4>
+                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none italic-none">Рух балів</h4>
                     <div class="space-y-4">
                         ${history.length > 0 ? history.map(t => `
-                            <div class="flex items-center justify-between p-4 bg-white/2 rounded-2xl border border-white/5 group hover:border-white/10 transition">
+                            <div class="flex items-center justify-between p-4 bg-white/2 rounded-2xl border border-white/5">
                                 <div class="flex items-center gap-4">
                                     <div class="w-10 h-10 rounded-xl bg-zinc-900 border border-white/5 flex items-center justify-center">
                                         <i class="fa-solid ${t.amount > 0 ? 'fa-plus text-emerald-500' : 'fa-minus text-rose-500'} text-[10px]"></i>
                                     </div>
                                     <div>
                                         <p class="text-xs font-bold text-white tracking-tight italic-none">${t.reason}</p>
-                                        <p class="text-[9px] text-zinc-600 font-black uppercase mt-1 tracking-tighter italic-none">${new Date(t.created_at).toLocaleDateString('uk-UA')} • ${new Date(t.created_at).toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'})}</p>
+                                        <p class="text-[9px] text-zinc-600 font-black uppercase mt-1 italic-none">${new Date(t.created_at).toLocaleDateString('uk-UA')}</p>
                                     </div>
                                 </div>
-                                <div class="text-right">
-                                    <p class="text-sm font-black ${t.amount > 0 ? 'text-emerald-400' : 'text-zinc-500'} italic-none">
-                                        ${t.amount > 0 ? '+' : ''}${t.amount}
-                                    </p>
-                                    <span class="text-[7px] text-zinc-700 font-bold uppercase italic-none tracking-widest">балів</span>
-                                </div>
+                                <p class="text-sm font-black ${t.amount > 0 ? 'text-emerald-400' : 'text-zinc-500'} italic-none">
+                                    ${t.amount > 0 ? '+' : ''}${t.amount}
+                                </p>
                             </div>
-                        `).join('') : '<p class="text-zinc-700 text-[10px] font-black uppercase text-center py-20 italic-none">Тут з’явиться історія ваших бонусів</p>'}
+                        `).join('') : '<p class="text-zinc-700 text-[10px] font-black uppercase text-center py-20 italic-none">Транзакцій не знайдено</p>'}
                     </div>
                 </div>
             </div>
