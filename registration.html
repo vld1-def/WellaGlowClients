@@ -118,66 +118,28 @@
             </div>
 
             <form class="space-y-5" autocomplete="off">
-                <div class="space-y-2">
-                    <label class="text-[9px] text-zinc-500 uppercase font-black ml-1 tracking-widest">Прізвище та Ім'я</label>
-                    <input type="text" id="clientName" placeholder="Олександра Коваль" class="input-dark">
-                </div>
+    <!-- Ім'я -->
+    <div class="space-y-2">
+        <label class="text-[9px] text-zinc-500 uppercase font-black ml-1 tracking-widest">Прізвище та Ім'я</label>
+        <input type="text" id="clientName" placeholder="Олександра Коваль" class="input-dark" required>
+    </div>
 
-                <div class="space-y-2">
-                    <label class="text-[9px] text-zinc-500 uppercase font-black ml-1 tracking-widest">Номер телефону</label>
-                    <input type="tel" id="clientPhone" placeholder="+38 (0__) ___ __ __" class="input-dark">
-                </div>
+    <!-- Телефон -->
+    <div class="space-y-2">
+        <label class="text-[9px] text-zinc-600 uppercase font-black ml-1 tracking-widest">Номер телефону</label>
+        <input type="tel" id="clientPhone" placeholder="+38 (067) 000 00 00" class="input-dark" required>
+    </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="space-y-2">
-                        <label class="text-[9px] text-zinc-500 uppercase font-black ml-1 tracking-widest leading-none">Дата народження</label>
-                        <input type="date" id="clientBday" class="input-dark">
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-[9px] text-zinc-500 uppercase font-black ml-1 tracking-widest leading-none">Стать</label>
-                        <select  id="clientGender" class="input-dark">
-                            <option>Жіноча</option>
-                            <option>Чоловіча</option>
-                        </select>
-                    </div>
-                </div>
+    <!-- Пароль -->
+    <div class="space-y-2">
+        <label class="text-[9px] text-zinc-500 uppercase font-black ml-1 tracking-widest">Придумати пароль</label>
+        <input type="password" id="clientPassword" placeholder="••••••••" class="input-dark" required>
+    </div>
 
-                <div class="space-y-2 pt-2">
-                    <label class="text-[9px] text-zinc-500 uppercase font-black ml-1 tracking-widest">Придумати пароль</label>
-                    <div class="relative">
-                        <input type="password" id="clientPassword" placeholder="••••••••" class="input-dark">
-                        <button type="button" class="absolute right-4 top-3 text-zinc-600 hover:text-zinc-400 transition">
-                            <i class="fa-solid fa-eye-slash text-xs"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="pt-6 space-y-4">
-                    <button type="submit" class="neo-gradient w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] text-white shadow-xl shadow-rose-500/10 hover:shadow-rose-500/20 transition-all active:scale-95">
-                        Зареєструватись
-                    </button>
-                    
-                    <div class="relative flex items-center justify-center py-2">
-                        <div class="absolute w-full h-px bg-white/5"></div>
-                        <span class="relative bg-[#111113] px-4 text-[8px] text-zinc-700 font-black uppercase tracking-widest">Або через</span>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <button class="flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition">
-                            <i class="fa-brands fa-google text-xs text-white"></i>
-                            <span class="text-[9px] font-black uppercase tracking-widest text-white">Google</span>
-                        </button>
-                        <button class="flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition">
-                            <i class="fa-brands fa-apple text-sm text-white"></i>
-                            <span class="text-[9px] font-black uppercase tracking-widest text-white">Apple ID</span>
-                        </button>
-                    </div>
-                </div>
-
-                <p class="text-[8px] text-zinc-700 text-center uppercase font-bold tracking-tighter leading-relaxed px-4 italic-none">
-                    Реєструючись, ви погоджуєтесь з <a href="#" class="underline">умовами надання послуг</a> та <a href="#" class="underline">політикою конфіденційності</a>
-                </p>
-            </form>
+    <button type="submit" class="neo-gradient w-full py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] text-white shadow-xl mt-4 transition active:scale-95">
+        Зареєструватись
+    </button>
+</form>
         </div>
 
     </div>
