@@ -861,11 +861,11 @@ window.renderBonusPage = async function() {
                 <h3 class="text-3xl font-black text-white italic-none tracking-tighter">${balance.toLocaleString()}</h3>
             </div>
             <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-emerald-500">
-                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Нараховано всього</p>
+                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none hidden">Нараховано всього</p>
                 <h3 class="text-3xl font-black text-white italic-none tracking-tighter">${totalEarned.toLocaleString()}</h3>
             </div>
             <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-zinc-700">
-                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Витрачено балів</p>
+                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none hidden">Витрачено балів</p>
                 <h3 class="text-3xl font-black text-zinc-500 italic-none tracking-tighter">${totalSpent.toLocaleString()}</h3>
             </div>
         </div>
