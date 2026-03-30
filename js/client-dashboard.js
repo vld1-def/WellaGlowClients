@@ -854,19 +854,23 @@ window.renderBonusPage = async function() {
             </div>
         </header>
 
-        <!-- KPI БЛОКИ (ПОВЕРНУТО) -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-rose-500 shadow-xl">
+         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <!-- ЦЯ КАРТКА ВИДИМА ЗАВЖДИ -->
+            <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-rose-500 shadow-xl relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 w-32 h-32 bg-rose-500/10 rounded-full blur-3xl animate-flicker-blur"></div>
                 <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Доступно зараз</p>
                 <h3 class="text-3xl font-black text-white italic-none tracking-tighter">${balance.toLocaleString()}</h3>
             </div>
-            <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-emerald-500">
-                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none hidden">Нараховано всього</p>
+            
+            <!-- ЦІ ДВІ КАРТКИ СХОВАНІ НА МОБІЛЬНИХ (hidden), АЛЕ ВИДИМІ НА ДЕСКТОПІ (md:block) -->
+            <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-emerald-500 hidden md:block">
+                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Нараховано всього</p>
                 <h3 class="text-3xl font-black text-white italic-none tracking-tighter">${totalEarned.toLocaleString()}</h3>
             </div>
-            <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-zinc-700">
-                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none hidden">Витрачено балів</p>
-                <h3 class="text-3xl font-black text-zinc-500 italic-none tracking-tighter">${totalSpent.toLocaleString()}</h3>
+            
+            <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-zinc-700 hidden md:block">
+                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Витрачено балів</p>
+                <h3 class="text-3xl font-black text-zinc-300 italic-none tracking-tighter">${totalSpent.toLocaleString()}</h3>
             </div>
         </div>
 
