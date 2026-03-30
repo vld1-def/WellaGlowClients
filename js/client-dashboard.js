@@ -1,5 +1,8 @@
 // js/client-dashboard.js
-// Глобальні змінні для збереження вибору клієнта
+// Глобальні змінні для зберігання вибору
+window.selectedServiceId = null;
+window.selectedServiceName = null;
+window.selectedServicePrice = 0;
 window.selectedMasterId = null;
 window.selectedDateValue = null;
 window.selectedTimeValue = null;
@@ -396,19 +399,15 @@ window.renderBookingPage = async function() {
 
 // --- 3. ЗАВАНТАЖЕННЯ ГРАФІКА МАЙСТРА ---
 window.loadMasterAvailability = async function(el, masterId, name) {
-    // Стиль для вибраного майстра
     document.querySelectorAll('.master-selector').forEach(item => item.classList.remove('border-rose-500', 'bg-rose-500/10'));
     el.classList.add('border-rose-500', 'bg-rose-500/10');
     
-    window.selectedMasterId = masterId;
+    window.selectedMasterId = masterId; // ЗБЕРІГАЄМО ID
     document.getElementById('sumMaster').innerText = name;
 
-    // Активуємо секцію календаря
     const section = document.getElementById('calendarSection');
     section.classList.remove('opacity-30', 'pointer-events-none');
 
-    // Отримуємо зміни майстра з таблиці staff_shifts (припускаємо, що така є)
-    // Якщо немає таблиці, можна просто дозволити всі дні крім вихідних
     const { data: shifts } = await window.db.from('staff_shifts').select('shift_date').eq('staff_id', masterId);
     const availableDates = shifts?.map(s => s.shift_date) || [];
 
@@ -531,7 +530,7 @@ function selectMaster(el, id, name) {
     document.getElementById('sumMaster').innerText = name;
 }
 
-// --- ВИБІР ЧАСУ ---
+// ФУНКЦІЯ: Вибір часу
 window.selectTime = function(el) {
     document.querySelectorAll('.time-btn').forEach(item => {
         item.classList.remove('bg-rose-500', 'text-white');
@@ -541,8 +540,8 @@ window.selectTime = function(el) {
     el.classList.add('bg-rose-500', 'text-white');
     el.classList.remove('bg-white/5', 'text-zinc-400');
     
-    window.selectedTimeValue = el.innerText.split('\n')[0].trim(); 
-    window.updateSummary(); // Оновлюємо підсумок
+    window.selectedTimeValue = el.innerText.split('\n')[0].trim(); // ЗБЕРІГАЄМО ЧАС
+    window.updateSummary(); 
 };
 
 window.updateSummary = function() {
@@ -581,112 +580,92 @@ window.updateSummary = function() {
 // --- ФІНАЛЬНА ФУНКЦІЯ ПІДТВЕРДЖЕННЯ ЗАПИСУ ---
 window.confirmBooking = async function() {
     const clientId = localStorage.getItem('wella_glow_user_id');
-    
-    // 1. Отримуємо елемент селекту послуг
-    const serviceSelect = document.getElementById('selectService');
-    if (!serviceSelect) {
-        console.error("Елемент #selectService не знайдено");
-        return;
-    }
 
-    const serviceName = serviceSelect.value;
-    const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
-    const price = selectedOption ? selectedOption.dataset.price : 0;
-
-    // 2. ВАЛІДАЦІЯ: Перевіряємо, чи клієнт все обрав
-    // Тепер ми беремо дату і час із ГЛОБАЛЬНИХ ЗМІННИХ, а не з інпутів
-    if (serviceName === "0" || !window.selectedMasterId || !window.selectedDateValue || !window.selectedTimeValue) {
+    // Перевірка всіх обов'язкових даних
+    if (!window.selectedServiceId || !window.selectedMasterId || !window.selectedDateValue || !window.selectedTimeValue) {
         alert("Будь ласка, оберіть послугу, майстра, дату та час візиту.");
         return;
     }
 
-    // Блокуємо кнопку, щоб уникнути подвійних кліків
+    // Блокуємо кнопку
     const btn = event.target;
-    const originalText = btn.innerText;
-    btn.innerText = "ОБРОБКА...";
+    btn.innerText = "ЗБЕРЕЖЕННЯ...";
     btn.disabled = true;
 
     try {
-        // 3. ВІДПРАВКА В SUPABASE
-        const { data, error } = await window.db
+        const { error } = await window.db
             .from('appointments')
             .insert([{
                 client_id: clientId,
                 master_id: window.selectedMasterId,
-                service_name: serviceName,
+                service_id: window.selectedServiceId, // Додаємо ID послуги
+                service_name: window.selectedServiceName, // Додаємо назву для історії
                 appointment_date: window.selectedDateValue,
                 appointment_time: window.selectedTimeValue,
-                price: parseInt(price),
-                status: 'waiting' // Статус за замовчуванням "На розгляді"
+                price: window.selectedServicePrice,
+                status: 'waiting'
             }]);
 
         if (error) throw error;
 
-        // 4. УСПІХ
-        alert("Запис успішно створено! Очікуйте на підтвердження адміністратором. ✨");
+        alert("Запис успішно створено! ✨");
         
-        // Очищаємо змінні перед поверненням
+        // Скидаємо змінні
+        window.selectedServiceId = null;
         window.selectedMasterId = null;
         window.selectedDateValue = null;
         window.selectedTimeValue = null;
 
-        // Повертаємось у профіль
         window.renderProfilePage();
 
     } catch (err) {
-        console.error("Помилка бронювання:", err.message);
-        alert("Не вдалося створити запис: " + err.message);
-        
-        // Повертаємо кнопку в робочий стан
-        btn.innerText = originalText;
+        console.error(err);
+        alert("Помилка: " + err.message);
+        btn.innerText = "Підтвердити запис";
         btn.disabled = false;
     }
 };
-// --- НОВА ФУНКЦІЯ ФІЛЬТРАЦІЇ МАЙСТРІВ ---
+// ФУНКЦІЯ: Вибір послуги
 window.filterMastersByService = async function(selectEl) {
     const serviceId = selectEl.value;
-    const mastersGrid = document.getElementById('mastersGrid');
-    const mastersSection = document.getElementById('mastersSection');
+    const selectedOption = selectEl.options[selectEl.selectedIndex];
     
     if (serviceId === "0") {
-        mastersSection.classList.add('opacity-30', 'pointer-events-none');
+        window.selectedServiceId = null;
+        document.getElementById('mastersSection').classList.add('opacity-30', 'pointer-events-none');
         return;
     }
 
-    // Оновлюємо підсумок (ціна та назва)
-    const selectedOption = selectEl.options[selectEl.selectedIndex];
-    document.getElementById('sumService').innerText = selectedOption.dataset.name;
-    document.getElementById('sumPrice').innerText = "₴" + selectedOption.dataset.price;
-    window.selectedServiceId = serviceId; // Зберігаємо для запису
+    // Зберігаємо дані послуги
+    window.selectedServiceId = serviceId;
+    window.selectedServiceName = selectedOption.dataset.name;
+    window.selectedServicePrice = parseInt(selectedOption.dataset.price);
 
-    // Активуємо блок майстрів та показуємо завантаження
+    // Оновлюємо праву панель (Summary)
+    document.getElementById('sumService').innerText = window.selectedServiceName;
+    document.getElementById('sumPrice').innerText = "₴" + window.selectedServicePrice;
+
+    // Далі йде твій код завантаження майстрів (той що був у попередній відповіді)
+    const mastersGrid = document.getElementById('mastersGrid');
+    const mastersSection = document.getElementById('mastersSection');
     mastersSection.classList.remove('opacity-30', 'pointer-events-none');
-    mastersGrid.innerHTML = `<p class="col-span-full text-center animate-pulse text-[10px] text-rose-500 font-bold uppercase tracking-widest py-4 italic-none">Шукаємо фахівців...</p>`;
+    mastersGrid.innerHTML = `<p class="col-span-full text-center animate-pulse text-[10px] text-rose-500 font-bold uppercase py-4">Шукаємо фахівців...</p>`;
 
-    // ЗАПИТ: беремо майстрів, які прив'язані до цієї послуги через staff_services
     const { data: masters, error } = await window.db
         .from('staff_services')
-        .select(`
-            staff (
-                id,
-                name,
-                role,
-                is_active
-            )
-        `)
+        .select(`staff (id, name, role, is_active)`)
         .eq('service_id', serviceId);
 
     if (error || !masters.length) {
-        mastersGrid.innerHTML = `<p class="col-span-full text-center text-[10px] text-zinc-500 font-bold uppercase py-4 italic-none">На жаль, майстрів для цієї послуги не знайдено</p>`;
+        mastersGrid.innerHTML = `<p class="col-span-full text-center text-[10px] text-zinc-500 font-bold uppercase py-4">Майстрів не знайдено</p>`;
         return;
     }
 
-    // Рендеримо тільки тих майстрів, які надають цю послугу
     mastersGrid.innerHTML = masters.map(m => `
         <div onclick="window.loadMasterAvailability(this, '${m.staff.id}', '${m.staff.name}')" class="master-selector border border-white/5 p-4 rounded-2xl bg-white/2 hover:border-rose-500/50 transition cursor-pointer text-center group">
-            <img src="https://ui-avatars.com/api/?name=${m.staff.name.replace(' ','+')}&background=111113&color=fff" class="w-10 h-10 rounded-full mx-auto mb-2 border border-white/10 group-hover:border-rose-500 transition-all duration-300 shadow-lg">
-            <p class="text-[11px] font-bold text-white tracking-tight leading-none italic-none">${m.staff.name}</p>
-            <p class="text-[8px] text-zinc-500 uppercase mt-2 font-bold italic-none leading-none">${m.staff.role || 'Майстер'}</p>
+            <img src="https://ui-avatars.com/api/?name=${m.staff.name.replace(' ','+')}&background=111113&color=fff" class="w-10 h-10 rounded-full mx-auto mb-2 border border-white/10">
+            <p class="text-[11px] font-bold text-white tracking-tight leading-none">${m.staff.name}</p>
+            <p class="text-[8px] text-zinc-500 uppercase mt-2 font-bold leading-none">${m.staff.role || 'Майстер'}</p>
         </div>
     `).join('');
 };
