@@ -422,17 +422,6 @@ window.renderBookingPage = async function(preServiceId = null, preMasterId = nul
     }
 };
 
-Ось оновлена логіка. Я виправив проблему з кліком, додав інтерактивний ефект наведення (hover), щоб зірочки «загоралися» по черзі, та оновив запис у базу, використовуючи master_id.
-1. Оновлена частина history.map у renderProfilePage
-Заміни цей шматок коду у своїй функції. Я додав події onmouseenter та onmouseleave для кожної зірочки.
-code
-JavaScript
-2. Додай ці допоміжні функції в js/client-dashboard.js
-Цей код відповідає за візуальний ефект «загорання» зірочок при наведенні та фіксацію при кліку.
-code
-JavaScript
-// --- ЛОГІКА ІНТЕРФЕЙСУ ЗІРОЧОК ---
-
 // 1. Ефект наведення (підсвічує зірки до тієї, на яку навели)
 window.hoverStars = function(starEl, rating) {
     const row = starEl.closest('.stars-row');
