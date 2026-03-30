@@ -316,64 +316,82 @@ function logout() {
 window.renderBookingPage = async function(preServiceId = null, preMasterId = null) {
     window.updateSidebar('booking');
     const main = document.querySelector('main');
+    
+    // Отримуємо послуги
     const { data: allServices } = await window.db.from('services').select('*').order('name');
+    window.allServicesData = allServices; // Зберігаємо для фільтрації
 
     main.innerHTML = `
         <header class="flex justify-between items-center mb-10">
             <div>
-                <h2 class="text-2xl font-extrabold text-white tracking-tight leading-none">Бронювання візиту</h2>
-                <p class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest mt-2 leading-none">Оберіть час для вашого запису</p>
+                <h2 class="text-2xl font-extrabold text-white tracking-tight leading-none italic-none">Запис на візит</h2>
+                <p class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest mt-2 leading-none italic-none">Створи свій ідеальний образ</p>
             </div>
-            <button onclick="window.renderProfilePage()" class="text-[10px] text-zinc-500 hover:text-white transition font-black uppercase tracking-widest">
-                <i class="fa-solid fa-xmark mr-1"></i> Назад
-            </button>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2 space-y-6">
+                
+                <!-- КРОК 1: ТИП ПОСЛУГИ (КНОПКИ) ТА ВИБІР -->
                 <div class="glass-panel p-6 rounded-[2rem]">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-6 text-rose-500">1. Оберіть послугу</h4>
-                    <select id="selectService" class="input-dark w-full" onchange="window.filterMastersByService(this)">
-                        <option value="0" data-price="0">Оберіть процедуру...</option>
-                        ${allServices?.map(s => `
-                            <option value="${s.id}" data-name="${s.name}" data-price="${s.price}" ${preServiceId === s.id ? 'selected' : ''}>${s.name} — ₴${s.price}</option>
-                        `).join('')}
-                    </select>
+                    <h4 class="text-xs font-black text-rose-500 uppercase tracking-widest mb-6 leading-none italic-none">1. Оберіть послугу</h4>
+                    
+                    <!-- Рядок категорій -->
+                    <div class="flex gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
+                        <button onclick="window.filterByCategory('all', this)" class="category-btn active px-4 py-2 rounded-xl border border-white/5 text-[9px] font-black uppercase tracking-widest transition shrink-0 italic-none">Всі</button>
+                        <button onclick="window.filterByCategory('Hair', this)" class="category-btn px-4 py-2 rounded-xl border border-white/5 text-[9px] font-black uppercase tracking-widest transition shrink-0 italic-none text-zinc-500">Волосся</button>
+                        <button onclick="window.filterByCategory('Nail', this)" class="category-btn px-4 py-2 rounded-xl border border-white/5 text-[9px] font-black uppercase tracking-widest transition shrink-0 italic-none text-zinc-500">Манікюр</button>
+                        <button onclick="window.filterByCategory('Makeup', this)" class="category-btn px-4 py-2 rounded-xl border border-white/5 text-[9px] font-black uppercase tracking-widest transition shrink-0 italic-none text-zinc-500">Макіяж</button>
+                    </div>
+
+                    <!-- Кастомний випадаючий список -->
+                    <div class="relative">
+                        <div onclick="window.toggleServiceDropdown()" id="serviceSelector" class="input-dark w-full flex justify-between items-center cursor-pointer">
+                            <span id="selectedServiceText" class="italic-none">Оберіть процедуру...</span>
+                            <i class="fa-solid fa-chevron-down text-[10px] text-zinc-600 transition-transform duration-300" id="dropdownArrow"></i>
+                        </div>
+                        
+                        <div id="serviceDropdownList" class="service-dropdown-list glass-panel absolute w-full z-50 mt-2 rounded-2xl border border-white/10 bg-[#0f0f11]">
+                            <div id="servicesItemsContainer" class="p-2 space-y-1">
+                                <!-- Послуги завантажаться сюди -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
+                <!-- КРОК 2: МАЙСТЕР -->
                 <div id="mastersSection" class="glass-panel p-6 rounded-[2rem] opacity-30 pointer-events-none transition-all duration-500">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-6 text-rose-500">2. Оберіть майстра</h4>
+                    <h4 class="text-xs font-black text-rose-500 uppercase tracking-widest mb-6 leading-none italic-none">2. Оберіть майстра</h4>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-4" id="mastersGrid"></div>
                 </div>
 
+                <!-- КРОК 3: КАЛЕНДАР -->
                 <div id="calendarSection" class="glass-panel p-6 rounded-[2rem] opacity-30 pointer-events-none transition-all duration-500">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-6 text-rose-500">3. Доступні дати</h4>
-                    <div id="calendarGrid" class="grid grid-cols-7 gap-2 text-center"></div>
-                    <div id="timeSlots" class="grid grid-cols-4 gap-2 mt-8"></div>
+                    <h4 class="text-xs font-black text-rose-500 uppercase tracking-widest mb-6 leading-none italic-none">3. Дата та час</h4>
+                    <div id="calendarGrid" class="grid grid-cols-7 gap-2 text-center italic-none"></div>
+                    <div id="timeSlots" class="grid grid-cols-4 gap-2 mt-8 italic-none"></div>
                 </div>
             </div>
 
+            <!-- ПРАВА ПАНЕЛЬ (SUMMARY) -->
             <div class="lg:col-span-1">
                 <div class="glass-panel p-8 rounded-[2.5rem] sticky top-10 border-t-4 border-t-rose-500 shadow-2xl">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 text-center leading-none">Ваше бронювання</h4>
+                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 text-center leading-none italic-none">Ваше бронювання</h4>
                     <div class="space-y-4 mb-8">
-                        <div class="flex justify-between text-[11px] font-bold"><span class="text-zinc-500 uppercase">Послуга</span><span id="sumService" class="text-white uppercase text-right">---</span></div>
-                        <div class="flex justify-between text-[11px] font-bold"><span class="text-zinc-500 uppercase">Майстер</span><span id="sumMaster" class="text-white uppercase text-right">---</span></div>
-                        <div class="flex justify-between text-[11px] font-bold"><span class="text-zinc-500 uppercase">Дата</span><span id="sumDate" class="text-white uppercase">---</span></div>
+                        <div class="flex justify-between text-[11px] font-bold"><span class="text-zinc-500 uppercase italic-none">Послуга</span><span id="sumService" class="text-white text-right italic-none">---</span></div>
+                        <div class="flex justify-between text-[11px] font-bold"><span class="text-zinc-500 uppercase italic-none">Майстер</span><span id="sumMaster" class="text-white text-right italic-none">---</span></div>
+                        <div class="flex justify-between text-[11px] font-bold"><span class="text-zinc-500 uppercase italic-none">Дата</span><span id="sumDate" class="text-white italic-none">---</span></div>
                         <div class="h-px bg-white/5 my-4"></div>
-                        <div class="flex justify-between items-center"><span class="text-sm font-black text-white uppercase">До сплати</span><span id="sumPrice" class="text-2xl font-black text-emerald-400 tracking-tighter">₴0</span></div>
+                        <div class="flex justify-between items-center"><span class="text-sm font-black text-white uppercase tracking-tighter italic-none">До сплати</span><span id="sumPrice" class="text-2xl font-black text-emerald-400 italic-none">₴0</span></div>
                     </div>
-                    <button onclick="window.confirmBooking()" class="neo-gradient w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-white shadow-xl transition active:scale-95">Підтвердити запис</button>
+                    <button onclick="window.confirmBooking()" class="neo-gradient w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-white shadow-xl transition active:scale-95 italic-none">Підтвердити запис</button>
                 </div>
             </div>
         </div>
     `;
 
-    // Якщо ми передали дані для повтору — запускаємо ланцюжок вибору
-    if (preServiceId) {
-        const select = document.getElementById('selectService');
-        window.filterMastersByService(select, preMasterId);
-    }
+    // Початковий рендер списку послуг
+    window.renderServicesList('all');
 };
 
 // 1. Ефект наведення (підсвічує зірки до тієї, на яку навели)
@@ -951,4 +969,87 @@ window.renderBonusPage = async function() {
             </div>
         </div>
     `;
+};
+const dropdownStyle = document.createElement('style');
+dropdownStyle.textContent = `
+    .service-dropdown-list {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .service-dropdown-list.open {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .category-btn.active {
+        background: rgba(244, 63, 94, 0.15);
+        border-color: #f43f5e;
+        color: #f43f5e;
+    }
+`;
+document.head.appendChild(dropdownStyle);
+
+// Відкрити/Закрити випадаючий список
+window.toggleServiceDropdown = function() {
+    const list = document.getElementById('serviceDropdownList');
+    const arrow = document.getElementById('dropdownArrow');
+    list.classList.toggle('open');
+    arrow.classList.toggle('rotate-180');
+};
+
+// Фільтрація за кнопками категорій
+window.filterByCategory = function(category, btn) {
+    // Стиль кнопок
+    document.querySelectorAll('.category-btn').forEach(b => {
+        b.classList.remove('active', 'text-rose-500');
+        b.classList.add('text-zinc-500');
+    });
+    btn.classList.add('active', 'text-rose-500');
+    btn.classList.remove('text-zinc-500');
+
+    window.renderServicesList(category);
+    
+    // Якщо список закритий - відкриваємо його, щоб показати результат
+    const list = document.getElementById('serviceDropdownList');
+    if (!list.classList.contains('open')) window.toggleServiceDropdown();
+};
+
+// Рендер пунктів всередині списку
+window.renderServicesList = function(category) {
+    const container = document.getElementById('servicesItemsContainer');
+    const services = category === 'all' 
+        ? window.allServicesData 
+        : window.allServicesData.filter(s => s.category === category);
+
+    container.innerHTML = services.map(s => `
+        <div onclick="window.selectServiceUI('${s.id}', '${s.name}', ${s.price})" 
+             class="p-3 rounded-xl hover:bg-white/5 cursor-pointer transition flex justify-between items-center group">
+            <span class="text-xs font-bold text-zinc-300 group-hover:text-white transition italic-none">${s.name}</span>
+            <span class="text-[10px] font-black text-zinc-500 italic-none">₴${s.price}</span>
+        </div>
+    `).join('');
+};
+
+// Вибір конкретної послуги
+window.selectServiceUI = function(id, name, price) {
+    // Оновлюємо текст в "селекті"
+    document.getElementById('selectedServiceText').innerText = name;
+    document.getElementById('selectedServiceText').classList.add('text-white', 'font-bold');
+    
+    // Записуємо дані
+    window.selectedServiceId = id;
+    window.selectedServiceName = name;
+    window.selectedServicePrice = price;
+
+    // Оновлюємо чек справа
+    document.getElementById('sumService').innerText = name;
+    document.getElementById('sumPrice').innerText = "₴" + price;
+
+    // Закриваємо список
+    window.toggleServiceDropdown();
+
+    // Запускаємо фільтрацію майстрів (як ми робили раніше)
+    // Створюємо фейковий елемент для сумісності з попередньою функцією
+    const fakeSelect = { value: id, options: [{ dataset: { name: name, price: price } }], selectedIndex: 0 };
+    window.filterMastersByService(fakeSelect);
 };
