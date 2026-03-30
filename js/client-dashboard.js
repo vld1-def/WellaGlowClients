@@ -84,8 +84,11 @@ async function loadHistory(clientId) {
     `).join('');
 }
 
-// js/client-dashboard.js
-
+// Знайти цей рядок у Promise.all:
+window.db.from('appointment_history')
+    .select('*, staff(name), services(name)') // Підтягуємо імена з таблиць staff та services
+    .eq('client_id', userId)
+    .order('visit_date', { ascending: false })
 // Додаємо стилі для пульсації статусів
 const style = document.createElement('style');
 style.textContent = `
@@ -217,20 +220,27 @@ window.renderProfilePage = async function() {
                 <div class="glass-panel p-8 rounded-[2.5rem]">
                     <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none">Історія моїх візитів</h4>
                     <div class="space-y-6">
-                        ${history.map(h => `
+                        ${history.length > 0 ? history.map(h => {
+                            // Беремо назву послуги та майстра з приєднаних таблиць
+                            // Якщо зв'язок не спрацює, виводимо "---"
+                            const serviceName = h.services?.name || 'Послуга';
+                            const masterName = h.staff?.name || 'Майстер';
+                            
+                            return `
                             <div class="flex justify-between items-center group">
                                 <div class="flex items-center gap-4">
                                     <div class="w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center font-bold text-xs text-zinc-500 uppercase leading-none">
                                         ${new Date(h.visit_date).toLocaleDateString('uk-UA', {day: '2-digit', month: '2-digit'})}
                                     </div>
                                     <div>
-                                        <p class="text-sm font-bold text-white tracking-tight leading-none italic-none">${h.service_name}</p>
-                                        <p class="text-[10px] text-zinc-500 mt-1 font-medium italic-none">Майстер: ${h.master_name} • ₴${h.price}</p>
+                                        <p class="text-sm font-bold text-white tracking-tight leading-none italic-none">${serviceName}</p>
+                                        <p class="text-[10px] text-zinc-500 mt-1 font-medium italic-none">Майстер: ${masterName} • ₴${h.price}</p>
                                     </div>
                                 </div>
                                 <button onclick="window.renderBookingPage()" class="px-4 py-2 border border-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-white/5 transition">Повторити</button>
                             </div>
-                        `).join('')}
+                            `;
+                        }).join('') : '<p class="text-zinc-600 text-xs font-bold uppercase text-center">Історія порожня</p>'}
                     </div>
                 </div>
 
