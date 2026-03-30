@@ -324,6 +324,8 @@ window.renderBookingPage = async function() {
     window.updateSidebar('booking'); // Робимо меню активним
     const main = document.querySelector('main');
     
+    // 1. Отримуємо ВСІ послуги зі студії
+    const { data: allServices } = await window.db.from('services').select('*').order('name');
     const { data: masters } = await window.db.from('staff').select('*').eq('is_active', true);
 
     main.innerHTML = `
@@ -343,25 +345,19 @@ window.renderBookingPage = async function() {
                 <!-- КРОК 1: ПОСЛУГА -->
                 <div class="glass-panel p-6 rounded-[2rem]">
                     <h4 class="text-xs font-black text-white uppercase tracking-widest mb-6 text-rose-500">1. Оберіть послугу</h4>
-                    <select id="selectService" class="input-dark w-full" onchange="window.updateSummary()">
+                    <select id="selectService" class="input-dark w-full" onchange="window.filterMastersByService(this)">
                         <option value="0" data-price="0">Оберіть процедуру...</option>
-                        <option value="Складне фарбування" data-price="2800">Складне фарбування (Wella) — ₴2,800</option>
-                        <option value="Стрижка та укладка" data-price="850">Стрижка та укладка — ₴850</option>
-                        <option value="Манікюр Lux" data-price="1100">Манікюр + Покриття — ₴1,100</option>
+                        ${allServices?.map(s => `
+                            <option value="${s.id}" data-name="${s.name}" data-price="${s.price}">${s.name} — ₴${s.price}</option>
+                        `).join('')}
                     </select>
                 </div>
 
                 <!-- КРОК 2: МАЙСТЕР -->
-                <div class="glass-panel p-6 rounded-[2rem]">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-6 text-rose-500">2. Оберіть майстра</h4>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        ${masters?.map(m => `
-                            <div onclick="window.loadMasterAvailability(this, '${m.id}', '${m.name}')" class="master-selector border border-white/5 p-4 rounded-2xl bg-white/2 hover:border-rose-500/50 transition cursor-pointer text-center">
-                                <img src="https://ui-avatars.com/api/?name=${m.name.replace(' ','+')}&background=111113&color=fff" class="w-10 h-10 rounded-full mx-auto mb-2 border border-white/10">
-                                <p class="text-[11px] font-bold text-white">${m.name}</p>
-                                <p class="text-[8px] text-zinc-500 uppercase">${m.role || 'Майстер'}</p>
-                            </div>
-                        `).join('')}
+                <div id="mastersSection" class="glass-panel p-6 rounded-[2rem] opacity-30 pointer-events-none transition-all duration-500">
+                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-6 leading-none text-rose-500 italic-none">2. Оберіть майстра</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4" id="mastersGrid">
+                        <p class="col-span-full text-[10px] text-zinc-600 font-bold uppercase tracking-widest text-center py-4 italic-none">Спершу оберіть послугу</p>
                     </div>
                 </div>
 
@@ -645,4 +641,52 @@ window.confirmBooking = async function() {
         btn.innerText = originalText;
         btn.disabled = false;
     }
+};
+// --- НОВА ФУНКЦІЯ ФІЛЬТРАЦІЇ МАЙСТРІВ ---
+window.filterMastersByService = async function(selectEl) {
+    const serviceId = selectEl.value;
+    const mastersGrid = document.getElementById('mastersGrid');
+    const mastersSection = document.getElementById('mastersSection');
+    
+    if (serviceId === "0") {
+        mastersSection.classList.add('opacity-30', 'pointer-events-none');
+        return;
+    }
+
+    // Оновлюємо підсумок (ціна та назва)
+    const selectedOption = selectEl.options[selectEl.selectedIndex];
+    document.getElementById('sumService').innerText = selectedOption.dataset.name;
+    document.getElementById('sumPrice').innerText = "₴" + selectedOption.dataset.price;
+    window.selectedServiceId = serviceId; // Зберігаємо для запису
+
+    // Активуємо блок майстрів та показуємо завантаження
+    mastersSection.classList.remove('opacity-30', 'pointer-events-none');
+    mastersGrid.innerHTML = `<p class="col-span-full text-center animate-pulse text-[10px] text-rose-500 font-bold uppercase tracking-widest py-4 italic-none">Шукаємо фахівців...</p>`;
+
+    // ЗАПИТ: беремо майстрів, які прив'язані до цієї послуги через staff_services
+    const { data: masters, error } = await window.db
+        .from('staff_services')
+        .select(`
+            staff (
+                id,
+                name,
+                role,
+                is_active
+            )
+        `)
+        .eq('service_id', serviceId);
+
+    if (error || !masters.length) {
+        mastersGrid.innerHTML = `<p class="col-span-full text-center text-[10px] text-zinc-500 font-bold uppercase py-4 italic-none">На жаль, майстрів для цієї послуги не знайдено</p>`;
+        return;
+    }
+
+    // Рендеримо тільки тих майстрів, які надають цю послугу
+    mastersGrid.innerHTML = masters.map(m => `
+        <div onclick="window.loadMasterAvailability(this, '${m.staff.id}', '${m.staff.name}')" class="master-selector border border-white/5 p-4 rounded-2xl bg-white/2 hover:border-rose-500/50 transition cursor-pointer text-center group">
+            <img src="https://ui-avatars.com/api/?name=${m.staff.name.replace(' ','+')}&background=111113&color=fff" class="w-10 h-10 rounded-full mx-auto mb-2 border border-white/10 group-hover:border-rose-500 transition-all duration-300 shadow-lg">
+            <p class="text-[11px] font-bold text-white tracking-tight leading-none italic-none">${m.staff.name}</p>
+            <p class="text-[8px] text-zinc-500 uppercase mt-2 font-bold italic-none leading-none">${m.staff.role || 'Майстер'}</p>
+        </div>
+    `).join('');
 };
