@@ -846,3 +846,93 @@ window.setQuickText = function(btn, text) {
     const input = parent.querySelector('input');
     input.value = text;
 };
+window.renderBonusPage = async function() {
+    window.updateSidebar('bonuses');
+    const main = document.querySelector('main');
+    const userId = localStorage.getItem('wella_glow_user_id');
+
+    // Отримуємо дані про бонуси
+    const [clientRes, bonusHistoryRes, programsRes] = await Promise.all([
+        window.db.from('clients').select('bonuses').eq('id', userId).single(),
+        window.db.from('bonus_history').select('*').eq('client_id', userId).order('created_at', { ascending: false }),
+        window.db.from('bonus_programs').select('*').eq('is_active', true)
+    ]);
+
+    const balance = clientRes.data?.bonuses || 0;
+    const history = bonusHistoryRes.data || [];
+    const programs = programsRes.data || [];
+
+    // Рахуємо статистику
+    const totalEarned = history.filter(t => t.amount > 0).reduce((sum, t) => sum + t.amount, 0);
+    const totalSpent = Math.abs(history.filter(t => t.amount < 0).reduce((sum, t) => sum + t.amount, 0));
+
+    main.innerHTML = `
+        <header class="flex justify-between items-center mb-10">
+            <div>
+                <h2 class="text-2xl font-extrabold text-white tracking-tight leading-none italic-none">Мої Бонуси</h2>
+                <p class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest mt-2 leading-none italic-none">Керуйте вашим бонусним балансом</p>
+            </div>
+            <div class="px-5 py-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                <span class="text-[11px] font-black text-amber-500 tracking-tighter italic-none">1 бал = 1 ₴</span>
+            </div>
+        </header>
+
+        <!-- KPI БОНУСІВ -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-rose-500">
+                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Доступно зараз</p>
+                <h3 class="text-3xl font-black text-white italic-none">${balance.toLocaleString()}</h3>
+            </div>
+            <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-emerald-500">
+                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Накопичено всього</p>
+                <h3 class="text-3xl font-black text-white italic-none">${totalEarned.toLocaleString()}</h3>
+            </div>
+            <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-zinc-700">
+                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Використано балів</p>
+                <h3 class="text-3xl font-black text-zinc-400 italic-none">${totalSpent.toLocaleString()}</h3>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- ЛІВА КОЛОНКА: АКТИВНІ ПРОГРАМИ -->
+            <div class="lg:col-span-1 space-y-6">
+                <h4 class="text-xs font-black text-white uppercase tracking-widest ml-4 italic-none">Доступні програми</h4>
+                ${programs.map(p => `
+                    <div class="glass-panel p-6 rounded-[2rem] relative overflow-hidden group border border-white/5">
+                        <div class="absolute -right-4 -top-4 w-16 h-16 bg-rose-500/5 rounded-full blur-xl group-hover:bg-rose-500/10 transition"></div>
+                        <p class="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1 italic-none">${p.name}</p>
+                        <p class="text-[11px] text-zinc-400 font-medium leading-relaxed italic-none">${p.description}</p>
+                        ${p.reward_amount ? `<p class="mt-4 text-sm font-black text-white italic-none">+ ${p.reward_amount} балів</p>` : ''}
+                    </div>
+                `).join('')}
+            </div>
+
+            <!-- ПРАВА КОЛОНКА: ІСТОРІЯ ТРАНЗАКЦІЙ -->
+            <div class="lg:col-span-2">
+                <div class="glass-panel p-8 rounded-[2.5rem]">
+                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 italic-none">Історія операцій</h4>
+                    <div class="space-y-4">
+                        ${history.length > 0 ? history.map(t => `
+                            <div class="flex items-center justify-between p-4 bg-white/2 rounded-2xl border border-white/5 group hover:border-white/10 transition">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center">
+                                        <i class="fa-solid ${t.amount > 0 ? 'fa-arrow-trend-up text-emerald-500' : 'fa-arrow-trend-down text-rose-500'} text-xs"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-bold text-white tracking-tight italic-none">${t.reason}</p>
+                                        <p class="text-[9px] text-zinc-500 uppercase font-black mt-1 tracking-tighter italic-none">${new Date(t.created_at).toLocaleDateString('uk-UA')} • ${new Date(t.created_at).toLocaleTimeString('uk-UA', {hour: '2-digit', minute:'2-digit'})}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-black ${t.amount > 0 ? 'text-emerald-400' : 'text-zinc-500'} italic-none">
+                                        ${t.amount > 0 ? '+' : ''}${t.amount}
+                                    </p>
+                                </div>
+                            </div>
+                        `).join('') : '<p class="text-zinc-600 text-xs font-bold uppercase text-center py-10 italic-none">Транзакцій ще не було</p>'}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+};
