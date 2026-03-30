@@ -321,69 +321,65 @@ window.renderBookingPage = async function(preServiceId = null, preMasterId = nul
     window.allServicesData = allServices;
 
     main.innerHTML = `
-        <header class="flex justify-between items-center mb-10">
-            <div>
-                <h2 class="text-2xl font-extrabold text-white tracking-tight leading-none italic-none uppercase">Запис на візит</h2>
-                <p class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest mt-2 leading-none italic-none">Створи свій ідеальний образ</p>
+        <header class="flex justify-between items-center mb-6 lg:mb-10">
+            <div class="max-w-[70%]">
+                <h2 class="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-none italic-none uppercase">Запис</h2>
+                <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2 leading-none italic-none">Створи свій ідеальний образ</p>
             </div>
+            <button onclick="window.renderProfilePage()" class="p-2 text-zinc-500"><i class="fa-solid fa-xmark text-xl"></i></button>
         </header>
 
-        <!-- КАТЕГОРІЇ ВИПЛИТІ ЗА МЕЖІ БЛОКУ -->
-        <div class="flex gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
-            <button onclick="window.filterByCategory('all', this)" class="category-btn active px-5 py-2.5 rounded-xl border border-white/5 bg-white/2 text-[10px] font-black uppercase tracking-widest transition shrink-0 italic-none">Всі</button>
-            <button onclick="window.filterByCategory('Hair', this)" class="category-btn px-5 py-2.5 rounded-xl border border-white/5 bg-white/2 text-[10px] font-black uppercase tracking-widest transition shrink-0 italic-none text-zinc-500">Волосся</button>
-            <button onclick="window.filterByCategory('Nail', this)" class="category-btn px-5 py-2.5 rounded-xl border border-white/5 bg-white/2 text-[10px] font-black uppercase tracking-widest transition shrink-0 italic-none text-zinc-500">Манікюр</button>
-            <button onclick="window.filterByCategory('Makeup', this)" class="category-btn px-5 py-2.5 rounded-xl border border-white/5 bg-white/2 text-[10px] font-black uppercase tracking-widest transition shrink-0 italic-none text-zinc-500">Макіяж</button>
+        <!-- КАТЕГОРІЇ (Тепер скроляться на мобілці) -->
+        <div class="flex gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar -mx-5 px-5 lg:mx-0 lg:px-0">
+            <button onclick="window.filterByCategory('all', this)" class="category-btn active px-4 py-2 rounded-xl border border-white/5 bg-white/2 text-[9px] font-black uppercase tracking-widest transition shrink-0 italic-none">Всі</button>
+            <button onclick="window.filterByCategory('Hair', this)" class="category-btn px-4 py-2 rounded-xl border border-white/5 bg-white/2 text-[9px] font-black uppercase tracking-widest transition shrink-0 italic-none text-zinc-500">Волосся</button>
+            <button onclick="window.filterByCategory('Nail', this)" class="category-btn px-4 py-2 rounded-xl border border-white/5 bg-white/2 text-[9px] font-black uppercase tracking-widest transition shrink-0 italic-none text-zinc-500">Манікюр</button>
+            <button onclick="window.filterByCategory('Makeup', this)" class="category-btn px-4 py-2 rounded-xl border border-white/5 bg-white/2 text-[9px] font-black uppercase tracking-widest transition shrink-0 italic-none text-zinc-500">Макіяж</button>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-2 space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+            <div class="lg:col-span-2 space-y-5 lg:space-y-6">
                 
-                <!-- КРОК 1: ВИБІР ПОСЛУГИ (Високий z-index) -->
-                <div class="glass-panel p-6 rounded-[2rem] relative z-dropdown">
-                    <h4 class="text-xs font-black text-rose-500 uppercase tracking-widest mb-6 leading-none italic-none">1. Оберіть послугу</h4>
-                    
+                <!-- КРОК 1 -->
+                <div class="glass-panel p-5 lg:p-6 rounded-[1.5rem] lg:rounded-[2rem] relative z-dropdown">
+                    <h4 class="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-4 italic-none">1. Оберіть послугу</h4>
                     <div class="relative">
-                        <div onclick="window.toggleServiceDropdown()" id="serviceSelector" class="input-dark w-full flex justify-between items-center cursor-pointer border border-white/10 hover:border-rose-500/50 transition">
-                            <span id="selectedServiceText" class="italic-none text-zinc-400">Оберіть процедуру із списку...</span>
-                            <i class="fa-solid fa-chevron-down text-[10px] text-zinc-600 transition-transform duration-300" id="dropdownArrow"></i>
+                        <div onclick="window.toggleServiceDropdown()" id="serviceSelector" class="input-dark w-full flex justify-between items-center cursor-pointer border border-white/10">
+                            <span id="selectedServiceText" class="italic-none text-zinc-400 text-xs truncate mr-2">Оберіть процедуру...</span>
+                            <i class="fa-solid fa-chevron-down text-[10px] text-zinc-600" id="dropdownArrow"></i>
                         </div>
-                        
-                        <!-- Список, що випадає ПОВЕРХ всього -->
                         <div id="serviceDropdownList" class="service-dropdown-list glass-panel absolute w-full mt-2 rounded-2xl border border-white/10 bg-[#0a0a0b] shadow-2xl">
-                            <div id="servicesItemsContainer" class="p-2 space-y-1">
-                                <!-- JS завантажить послуги -->
-                            </div>
+                            <div id="servicesItemsContainer" class="p-2 space-y-1"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- КРОК 2: МАЙСТЕР -->
-                <div id="mastersSection" class="glass-panel p-6 rounded-[2rem] opacity-30 pointer-events-none transition-all duration-500 relative z-step-2">
-                    <h4 class="text-xs font-black text-rose-500 uppercase tracking-widest mb-6 leading-none italic-none">2. Оберіть майстра</h4>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4" id="mastersGrid"></div>
+                <!-- КРОК 2 -->
+                <div id="mastersSection" class="glass-panel p-5 lg:p-6 rounded-[1.5rem] lg:rounded-[2rem] opacity-30 pointer-events-none relative z-step-2">
+                    <h4 class="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-4 italic-none">2. Оберіть майстра</h4>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" id="mastersGrid"></div>
                 </div>
 
-                <!-- КРОК 3: КАЛЕНДАР -->
-                <div id="calendarSection" class="glass-panel p-6 rounded-[2rem] opacity-30 pointer-events-none transition-all duration-500 relative z-step-3">
-                    <h4 class="text-xs font-black text-rose-500 uppercase tracking-widest mb-6 leading-none italic-none">3. Дата та час</h4>
-                    <div id="calendarGrid" class="grid grid-cols-7 gap-2 text-center italic-none"></div>
-                    <div id="timeSlots" class="grid grid-cols-4 gap-2 mt-8 italic-none"></div>
+                <!-- КРОК 3 -->
+                <div id="calendarSection" class="glass-panel p-5 lg:p-6 rounded-[1.5rem] lg:rounded-[2rem] opacity-30 pointer-events-none relative z-step-3">
+                    <h4 class="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-4 italic-none">3. Дата та час</h4>
+                    <div id="calendarGrid" class="grid grid-cols-7 gap-1 sm:gap-2 text-center text-[10px] italic-none"></div>
+                    <div id="timeSlots" class="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-6 italic-none"></div>
                 </div>
             </div>
 
-            <!-- ПРАВА ПАНЕЛЬ -->
+            <!-- ПРАВА ПАНЕЛЬ (Підсумок) -->
             <div class="lg:col-span-1">
-                <div class="glass-panel p-8 rounded-[2.5rem] sticky top-10 border-t-4 border-t-rose-500 shadow-2xl z-10">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 text-center leading-none italic-none">Ваше бронювання</h4>
-                    <div class="space-y-4 mb-8 italic-none">
-                        <div class="flex justify-between text-[11px] font-bold"><span class="text-zinc-500 uppercase">Послуга</span><span id="sumService" class="text-white text-right">---</span></div>
-                        <div class="flex justify-between text-[11px] font-bold"><span class="text-zinc-500 uppercase">Майстер</span><span id="sumMaster" class="text-white text-right">---</span></div>
-                        <div class="flex justify-between text-[11px] font-bold"><span class="text-zinc-500 uppercase">Дата</span><span id="sumDate" class="text-white">---</span></div>
-                        <div class="h-px bg-white/5 my-4"></div>
-                        <div class="flex justify-between items-center"><span class="text-sm font-black text-white uppercase tracking-tighter">До сплати</span><span id="sumPrice" class="text-2xl font-black text-emerald-400">₴0</span></div>
+                <div class="glass-panel p-6 lg:p-8 rounded-[1.5rem] lg:rounded-[2.5rem] lg:sticky lg:top-10 border-t-4 border-t-rose-500 shadow-2xl z-10">
+                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-6 text-center italic-none">Ваше бронювання</h4>
+                    <div class="space-y-3 mb-6 italic-none">
+                        <div class="flex justify-between text-[10px] font-bold"><span class="text-zinc-500 uppercase">Послуга</span><span id="sumService" class="text-white text-right truncate ml-4">---</span></div>
+                        <div class="flex justify-between text-[10px] font-bold"><span class="text-zinc-500 uppercase">Майстер</span><span id="sumMaster" class="text-white text-right">---</span></div>
+                        <div class="flex justify-between text-[10px] font-bold"><span class="text-zinc-500 uppercase">Дата</span><span id="sumDate" class="text-white">---</span></div>
+                        <div class="h-px bg-white/5 my-3"></div>
+                        <div class="flex justify-between items-center"><span class="text-xs font-black text-white uppercase tracking-tighter">До сплати</span><span id="sumPrice" class="text-xl font-black text-emerald-400">₴0</span></div>
                     </div>
-                    <button onclick="window.confirmBooking()" class="neo-gradient w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-white shadow-xl transition active:scale-95 italic-none">Підтвердити запис</button>
+                    <button onclick="window.confirmBooking()" class="neo-gradient w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-xl transition active:scale-95 italic-none">Підтвердити запис</button>
                 </div>
             </div>
         </div>
@@ -391,7 +387,6 @@ window.renderBookingPage = async function(preServiceId = null, preMasterId = nul
 
     window.renderServicesList('all');
 
-    // Авто-вибір, якщо перейшли з кнопки "Повторити"
     if (preServiceId) {
         setTimeout(() => {
             window.selectServiceUI(preServiceId, 'Завантаження...', 0, preMasterId);
@@ -732,74 +727,49 @@ window.confirmBooking = async function() {
         btn.disabled = false;
     }
 };
-// ФУНКЦІЯ: Вибір послуги
-window.filterMastersByService = async function(selectEl, preMasterId = null) {
-    const serviceId = selectEl.value;
+// --- ВИПРАВЛЕНА ФУНКЦІЯ ФІЛЬТРАЦІЇ МАЙСТРІВ ---
+window.filterMastersByService = async function(serviceId, preMasterId = null) {
     const mastersGrid = document.getElementById('mastersGrid');
     const mastersSection = document.getElementById('mastersSection');
     
-    if (serviceId === "0") {
-        window.selectedServiceId = null;
+    if (!serviceId || serviceId === "0") {
         if (mastersSection) mastersSection.classList.add('opacity-30', 'pointer-events-none');
         return;
     }
 
-    // Оновлюємо дані обраної послуги
-    const selectedOption = selectEl.options[selectEl.selectedIndex];
-    window.selectedServiceId = serviceId;
-    window.selectedServiceName = selectedOption.dataset.name;
-    window.selectedServicePrice = parseInt(selectedOption.dataset.price);
-
-    // Оновлюємо праву панель (Summary)
-    const sumService = document.getElementById('sumService');
-    const sumPrice = document.getElementById('sumPrice');
-    if (sumService) sumService.innerText = window.selectedServiceName;
-    if (sumPrice) sumPrice.innerText = "₴" + window.selectedServicePrice;
-
     // Активуємо блок майстрів
     if (mastersSection) mastersSection.classList.remove('opacity-30', 'pointer-events-none');
-    if (mastersGrid) mastersGrid.innerHTML = `<p class="col-span-full text-center animate-pulse text-[10px] text-rose-500 font-bold uppercase tracking-widest py-4 italic-none">Шукаємо фахівців...</p>`;
+    if (mastersGrid) mastersGrid.innerHTML = `<p class="col-span-full text-center animate-pulse text-[10px] text-rose-500 font-bold uppercase py-4 italic-none">Шукаємо фахівців...</p>`;
 
-    // Запит до бази: шукаємо майстрів для цієї послуги
+    // Запит до бази
     const { data: masters, error } = await window.db
         .from('staff_services')
-        .select(`
-            staff (
-                id,
-                name,
-                role,
-                is_active
-            )
-        `)
+        .select(`staff (id, name, role, is_active)`)
         .eq('service_id', serviceId);
 
     if (error || !masters || !masters.length) {
-        if (mastersGrid) mastersGrid.innerHTML = `<p class="col-span-full text-center text-[10px] text-zinc-500 font-bold uppercase py-4 italic-none">На жаль, майстрів не знайдено</p>`;
+        if (mastersGrid) mastersGrid.innerHTML = `<p class="col-span-full text-center text-[10px] text-zinc-500 font-bold uppercase py-4 italic-none">Майстрів не знайдено</p>`;
         return;
     }
 
-    // Рендеримо картки майстрів
+    // Рендеримо картки
     if (mastersGrid) {
         mastersGrid.innerHTML = masters.map(m => `
             <div id="master-card-${m.staff.id}" 
                  onclick="window.loadMasterAvailability(this, '${m.staff.id}', '${m.staff.name}')" 
-                 class="master-selector border border-white/5 p-4 rounded-2xl bg-white/2 hover:border-rose-500/50 transition cursor-pointer text-center group">
-                <img src="https://ui-avatars.com/api/?name=${m.staff.name.replace(' ','+')}&background=111113&color=fff" class="w-10 h-10 rounded-full mx-auto mb-2 border border-white/10 group-hover:border-rose-500 transition-all duration-300">
-                <p class="text-[11px] font-bold text-white tracking-tight leading-none italic-none">${m.staff.name}</p>
-                <p class="text-[8px] text-zinc-500 uppercase mt-2 font-bold italic-none leading-none">${m.staff.role || 'Майстер'}</p>
+                 class="master-selector border border-white/5 p-3 sm:p-4 rounded-2xl bg-white/2 hover:border-rose-500/50 transition cursor-pointer text-center group">
+                <img src="https://ui-avatars.com/api/?name=${m.staff.name.replace(' ','+')}&background=111113&color=fff" class="w-10 h-10 rounded-full mx-auto mb-2 border border-white/10">
+                <p class="text-[10px] sm:text-[11px] font-bold text-white tracking-tight leading-none italic-none">${m.staff.name}</p>
+                <p class="text-[7px] sm:text-[8px] text-zinc-500 uppercase mt-2 font-bold italic-none leading-none">${m.staff.role || 'Майстер'}</p>
             </div>
         `).join('');
     }
 
-    // ЯКЩО ЦЕ ПОВТОРНИЙ ЗАПИС: автоматично клікаємо на майстра
     if (preMasterId) {
-        // Чекаємо мить, щоб HTML встиг відрендеритись
         setTimeout(() => {
             const masterCard = document.getElementById(`master-card-${preMasterId}`);
-            if (masterCard) {
-                masterCard.click();
-            }
-        }, 100);
+            if (masterCard) masterCard.click();
+        }, 150);
     }
 };
 // 1. Ефект наведення (підсвічує зірки до тієї, на яку навели)
@@ -1040,15 +1010,19 @@ window.renderServicesList = function(category) {
 // Вибір конкретної послуги
 window.selectServiceUI = function(id, name, price, preMasterId = null) {
     const textEl = document.getElementById('selectedServiceText');
-    textEl.innerText = name;
-    textEl.classList.add('text-white', 'font-extrabold');
+    if (textEl) {
+        textEl.innerText = name;
+        textEl.classList.add('text-white', 'font-extrabold');
+    }
     
     window.selectedServiceId = id;
     window.selectedServiceName = name;
     window.selectedServicePrice = price;
 
-    document.getElementById('sumService').innerText = name;
-    document.getElementById('sumPrice').innerText = "₴" + price;
+    const sumService = document.getElementById('sumService');
+    const sumPrice = document.getElementById('sumPrice');
+    if (sumService) sumService.innerText = name;
+    if (sumPrice) sumPrice.innerText = "₴" + price;
 
     // Закриваємо список
     const list = document.getElementById('serviceDropdownList');
@@ -1056,7 +1030,6 @@ window.selectServiceUI = function(id, name, price, preMasterId = null) {
     if (list) list.classList.remove('open');
     if (arrow) arrow.classList.remove('rotate-180');
 
-    // Активуємо крок 2 (Майстри)
-    const fakeSelect = { value: id }; 
-    window.filterMastersByService(fakeSelect, preMasterId);
+    // ТУТ ВИПРАВЛЕНО: передаємо ID напряму
+    window.filterMastersByService(id, preMasterId);
 };
