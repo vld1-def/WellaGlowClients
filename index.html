@@ -86,7 +86,16 @@
             </div>
         </div>
     </main>
-
+    <script>
+function highlightSelection(containerId, activeElement) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.querySelectorAll('.glass-panel, .master-selector').forEach(el => {
+        el.classList.remove('border-rose-500', 'bg-rose-500/5');
+    });
+    activeElement.classList.add('border-rose-500', 'bg-rose-500/5');
+}        
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-init.js"></script>
     <script src="js/public-booking.js"></script>
