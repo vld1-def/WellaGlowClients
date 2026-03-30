@@ -7,6 +7,19 @@ window.selectedMasterId = null;
 window.selectedDateValue = null;
 window.selectedTimeValue = null;
 
+// Додай анімацію блимання блюру в загальні стилі
+const styleBonus = document.createElement('style');
+styleBonus.textContent = `
+    @keyframes pulse-blur {
+        0%, 100% { opacity: 0.1; transform: scale(1); }
+        50% { opacity: 0.3; transform: scale(1.1); }
+    }
+    .animate-flicker-blur {
+        animation: pulse-blur 4s ease-in-out infinite;
+    }
+`;
+document.head.appendChild(styleBonus);
+
 const truncate = (text, limit) => {
     if (!text) return '';
     return text.length > limit ? text.substring(0, limit) + "..." : text;
@@ -56,9 +69,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.renderProfilePage();
 });
 
-// 5. ОНОВЛЕННЯ САЙДБАРУ
 window.updateSidebar = function(activeId) {
-    const links = { 'profile': document.getElementById('nav-profile'), 'booking': document.getElementById('nav-booking') };
+    const links = { 
+        'profile': document.getElementById('nav-profile'), 
+        'booking': document.getElementById('nav-booking'),
+        'bonuses': document.getElementById('nav-bonuses') // Додано
+    };
     Object.values(links).forEach(link => {
         if (!link) return;
         link.classList.remove('text-white', 'border-l-2', 'border-rose-500', 'bg-rose-500/5', 'font-bold');
@@ -174,7 +190,6 @@ window.renderProfilePage = async function() {
                     <div class="flex justify-between items-end">
                         <div>
                             <p class="text-3xl font-black text-white leading-none italic-none">${client.bonuses} <span class="text-xs font-bold text-zinc-600 ml-1 italic-none">балів</span></p>
-                            <p class="text-[9px] text-zinc-500 mt-2 uppercase font-black leading-none italic-none">Знижка: ${tier.discount}</p>
                         </div>
                     </div>
                 </div>
@@ -880,9 +895,6 @@ window.renderBonusPage = async function() {
             <div>
                 <h2 class="text-2xl font-extrabold text-white tracking-tight leading-none italic-none uppercase">Бонусна програма</h2>
                 <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2 leading-none italic-none">Твої накопичення та привілеї</p>
-            </div>
-            <div class="px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                <span class="text-[10px] font-black text-amber-500 uppercase tracking-widest italic-none">Glow Loyalty</span>
             </div>
         </header>
 
