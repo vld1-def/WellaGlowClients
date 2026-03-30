@@ -442,19 +442,27 @@ window.resetStars = function(rowEl) {
 window.showReviewInput = function(starEl, rating, appointmentId) {
     const parent = starEl.closest('.review-container');
     const inputBlock = parent.querySelector('.review-input-block');
-    
-    // Фіксуємо рейтинг в атрибуті блоку
-    inputBlock.dataset.rating = rating;
-    
-    // Показуємо поле для тексту
-    inputBlock.classList.remove('hidden');
-    
-    // Оновлюємо колір зірок (фінально)
+    const quickReplies = parent.querySelector('.quick-replies'); // Блок з кнопками
     const stars = parent.querySelectorAll('.fa-star');
+
+    // 1. Візуально підсвічуємо зірочки
     stars.forEach((s, i) => {
         s.classList.toggle('text-amber-500', i < rating);
         s.classList.toggle('text-zinc-800', i >= rating);
     });
+
+    // 2. Фіксуємо рейтинг в атрибуті блоку
+    inputBlock.dataset.rating = rating;
+    
+    // 3. ПОКАЗУЄМО/ХОВАЄМО ШВИДКІ ВІДГУКИ
+    if (rating >= 4) {
+        quickReplies.classList.remove('hidden');
+    } else {
+        quickReplies.classList.add('hidden');
+    }
+    
+    // 4. Показуємо загальний блок вводу
+    inputBlock.classList.remove('hidden');
 };
 // 4. Відправка в базу (з використанням master_id)
 // Відправка відгуку
@@ -727,52 +735,73 @@ window.confirmBooking = async function() {
     }
 };
 // ФУНКЦІЯ: Вибір послуги
-window.filterMastersByService = async function(selectEl) {
+window.filterMastersByService = async function(selectEl, preMasterId = null) {
     const serviceId = selectEl.value;
-    const selectedOption = selectEl.options[selectEl.selectedIndex];
+    const mastersGrid = document.getElementById('mastersGrid');
+    const mastersSection = document.getElementById('mastersSection');
     
     if (serviceId === "0") {
         window.selectedServiceId = null;
-        document.getElementById('mastersSection').classList.add('opacity-30', 'pointer-events-none');
+        if (mastersSection) mastersSection.classList.add('opacity-30', 'pointer-events-none');
         return;
     }
 
-    // Зберігаємо дані послуги
+    // Оновлюємо дані обраної послуги
+    const selectedOption = selectEl.options[selectEl.selectedIndex];
     window.selectedServiceId = serviceId;
     window.selectedServiceName = selectedOption.dataset.name;
     window.selectedServicePrice = parseInt(selectedOption.dataset.price);
 
     // Оновлюємо праву панель (Summary)
-    document.getElementById('sumService').innerText = window.selectedServiceName;
-    document.getElementById('sumPrice').innerText = "₴" + window.selectedServicePrice;
+    const sumService = document.getElementById('sumService');
+    const sumPrice = document.getElementById('sumPrice');
+    if (sumService) sumService.innerText = window.selectedServiceName;
+    if (sumPrice) sumPrice.innerText = "₴" + window.selectedServicePrice;
 
-    // Далі йде твій код завантаження майстрів (той що був у попередній відповіді)
-    const mastersGrid = document.getElementById('mastersGrid');
-    const mastersSection = document.getElementById('mastersSection');
-    mastersSection.classList.remove('opacity-30', 'pointer-events-none');
-    mastersGrid.innerHTML = `<p class="col-span-full text-center animate-pulse text-[10px] text-rose-500 font-bold uppercase py-4">Шукаємо фахівців...</p>`;
+    // Активуємо блок майстрів
+    if (mastersSection) mastersSection.classList.remove('opacity-30', 'pointer-events-none');
+    if (mastersGrid) mastersGrid.innerHTML = `<p class="col-span-full text-center animate-pulse text-[10px] text-rose-500 font-bold uppercase tracking-widest py-4 italic-none">Шукаємо фахівців...</p>`;
 
+    // Запит до бази: шукаємо майстрів для цієї послуги
     const { data: masters, error } = await window.db
         .from('staff_services')
-        .select(`staff (id, name, role, is_active)`)
+        .select(`
+            staff (
+                id,
+                name,
+                role,
+                is_active
+            )
+        `)
         .eq('service_id', serviceId);
 
-    if (error || !masters.length) {
-        mastersGrid.innerHTML = `<p class="col-span-full text-center text-[10px] text-zinc-500 font-bold uppercase py-4">Майстрів не знайдено</p>`;
+    if (error || !masters || !masters.length) {
+        if (mastersGrid) mastersGrid.innerHTML = `<p class="col-span-full text-center text-[10px] text-zinc-500 font-bold uppercase py-4 italic-none">На жаль, майстрів не знайдено</p>`;
         return;
     }
 
-    mastersGrid.innerHTML = masters.map(m => `
-        <div onclick="window.loadMasterAvailability(this, '${m.staff.id}', '${m.staff.name}')" class="master-selector border border-white/5 p-4 rounded-2xl bg-white/2 hover:border-rose-500/50 transition cursor-pointer text-center group">
-            <img src="https://ui-avatars.com/api/?name=${m.staff.name.replace(' ','+')}&background=111113&color=fff" class="w-10 h-10 rounded-full mx-auto mb-2 border border-white/10">
-            <p class="text-[11px] font-bold text-white tracking-tight leading-none">${m.staff.name}</p>
-            <p class="text-[8px] text-zinc-500 uppercase mt-2 font-bold leading-none">${m.staff.role || 'Майстер'}</p>
-        </div>
-    `).join('');
-     // В кінці функції завантаження, після того як mastersGrid.innerHTML сформовано:
+    // Рендеримо картки майстрів
+    if (mastersGrid) {
+        mastersGrid.innerHTML = masters.map(m => `
+            <div id="master-card-${m.staff.id}" 
+                 onclick="window.loadMasterAvailability(this, '${m.staff.id}', '${m.staff.name}')" 
+                 class="master-selector border border-white/5 p-4 rounded-2xl bg-white/2 hover:border-rose-500/50 transition cursor-pointer text-center group">
+                <img src="https://ui-avatars.com/api/?name=${m.staff.name.replace(' ','+')}&background=111113&color=fff" class="w-10 h-10 rounded-full mx-auto mb-2 border border-white/10 group-hover:border-rose-500 transition-all duration-300">
+                <p class="text-[11px] font-bold text-white tracking-tight leading-none italic-none">${m.staff.name}</p>
+                <p class="text-[8px] text-zinc-500 uppercase mt-2 font-bold italic-none leading-none">${m.staff.role || 'Майстер'}</p>
+            </div>
+        `).join('');
+    }
+
+    // ЯКЩО ЦЕ ПОВТОРНИЙ ЗАПИС: автоматично клікаємо на майстра
     if (preMasterId) {
-        const masterEl = document.querySelector(`.master-selector[onclick*="${preMasterId}"]`);
-        if (masterEl) masterEl.click(); // Автоматично клікаємо по потрібному майстру
+        // Чекаємо мить, щоб HTML встиг відрендеритись
+        setTimeout(() => {
+            const masterCard = document.getElementById(`master-card-${preMasterId}`);
+            if (masterCard) {
+                masterCard.click();
+            }
+        }, 100);
     }
 };
 // 1. Ефект наведення (підсвічує зірки до тієї, на яку навели)
