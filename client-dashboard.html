@@ -69,28 +69,40 @@
 <body class="flex min-h-screen">
 
     <!-- SIDEBAR -->
-    <aside class="w-16 lg:w-64 bg-black/50 border-r border-white/5 flex flex-col fixed h-full z-50">
-        <div class="p-6">
-            <h1 class="text-lg font-extrabold text-white tracking-tighter uppercase leading-none text-rose-500">Glow App</h1>
-        </div>
+    <!-- SIDEBAR: Знизу на мобільних, збоку на десктопі -->
+<aside class="fixed bottom-0 lg:top-0 left-0 z-[100] w-full lg:w-64 h-16 lg:h-full bg-black/80 lg:bg-black/50 backdrop-blur-xl lg:backdrop-blur-none border-t lg:border-r border-white/5 flex flex-row lg:flex-col shadow-[0_-10px_20px_rgba(0,0,0,0.5)] lg:shadow-none transition-all">
+    
+    <!-- Логотип: Тільки для десктопа -->
+    <div class="hidden lg:flex p-6 flex-col">
+        <h1 class="text-lg font-extrabold text-white tracking-tighter uppercase leading-none">Wella Glow</h1>
+        <p class="text-[8px] text-rose-500 font-bold tracking-[0.4em] uppercase opacity-80 mt-1">studio</p>
+    </div>
 
-        <nav class="flex-1 px-4 space-y-6 mt-2 text-zinc-400">
-           <a href="#" id="nav-profile" onclick="window.renderProfilePage()" class="flex items-center gap-3 p-3 transition text-white border-l-2 border-rose-500 bg-rose-500/5 font-bold">
-    <i class="fa-solid fa-user text-sm text-rose-500"></i> 
-    <span class="hidden lg:block text-xs uppercase tracking-widest">Мій профіль</span>
-</a>
-            <a href="#" id="nav-booking" onclick="renderBookingPage()" class="flex items-center gap-3 p-3 hover:text-white transition">
-                <i class="fa-solid fa-calendar-plus text-sm"></i> 
-                <span class="hidden lg:block text-xs uppercase tracking-widest">Записатись</span>
-            </a>
-            <a href="#" id="nav-bonuses" onclick="window.renderBonusPage()" class="flex items-center gap-3 p-3 hover:text-white transition">
-                <i class="fa-solid fa-gift text-sm"></i> 
-                <span class="hidden lg:block text-xs uppercase tracking-widest">Бонуси</span>
-            </a>
-        </nav>
+    <!-- Навігація: Рядок на мобільних, колонка на десктопі -->
+    <nav class="flex flex-row lg:flex-col flex-1 px-2 lg:px-4 items-center lg:items-stretch justify-around lg:justify-start lg:space-y-4">
+        
+        <a href="#" id="nav-profile" onclick="window.renderProfilePage()" class="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 p-2 lg:p-3 transition text-zinc-400 group">
+            <i class="fa-solid fa-circle-user text-lg lg:text-sm"></i> 
+            <span class="text-[9px] lg:text-xs uppercase font-bold tracking-widest">Профіль</span>
+        </a>
 
-        <button onclick="logout()" class="text-zinc-600 hover:text-rose-500 transition text-[10px] font-black uppercase tracking-widest">Вийти</button>
-    </aside>
+        <a href="#" id="nav-booking" onclick="window.renderBookingPage()" class="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 p-2 lg:p-3 transition text-zinc-400 group">
+            <i class="fa-solid fa-calendar-plus text-lg lg:text-sm"></i> 
+            <span class="text-[9px] lg:text-xs uppercase font-bold tracking-widest">Запис</span>
+        </a>
+
+        <a href="#" id="nav-bonuses" onclick="window.renderBonusPage()" class="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 p-2 lg:p-3 transition text-zinc-400 group">
+            <i class="fa-solid fa-gift text-lg lg:text-sm"></i> 
+            <span class="text-[9px] lg:text-xs uppercase font-bold tracking-widest">Бонуси</span>
+        </a>
+
+        <!-- Вихід: Тільки іконка на мобільних -->
+        <button onclick="logout()" class="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 p-2 lg:p-3 transition text-zinc-600 hover:text-rose-500 lg:mt-auto lg:mb-4">
+            <i class="fa-solid fa-right-from-bracket text-lg lg:text-sm"></i>
+            <span class="text-[9px] lg:text-xs uppercase font-bold tracking-widest lg:block hidden">Вийти</span>
+        </button>
+    </nav>
+</aside>
 
     <!-- MAIN -->
     <main class="flex-1 ml-16 lg:ml-64 p-5 lg:p-10">
