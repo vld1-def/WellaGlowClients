@@ -231,7 +231,6 @@ function renderBookingSection() {
 // 7. РЕНДЕР БОНУСІВ (ВИПРАВЛЕНО activeProgs)
 function renderBonusesSection(client, programs, bonusHistory, visitHistory) {
     const container = document.getElementById('page-bonuses');
-    const balance = client?.bonuses || 0;
     const countVisits = (cat) => visitHistory.filter(v => v.services?.category === cat).length;
 
     const balance = bonusHistory.reduce((sum, t) => sum + t.amount, 0);
