@@ -237,34 +237,111 @@ function renderBookingSection() {
 function renderBonusesSection(client, programs, bonusHistory, visitHistory) {
     const container = document.getElementById('page-bonuses');
     const balance = client?.bonuses || 0;
+
+    // Допоміжна функція підрахунку візитів
+    const countVisits = (category) => {
+        if (!category) return visitHistory.length;
+        return visitHistory.filter(v => v.services?.category === category).length;
+    };
+
+    // Сортуємо програми на два масиви
+    const activePrograms = [];
+    const lockedPrograms = [];
+
+    programs.forEach(p => {
+        const count = countVisits(p.service_category);
+        const isLocked = count < p.required_visits;
+        const alreadyGot = bonusHistory.some(t => t.reason.toUpperCase() === p.name.toUpperCase());
+
+        const programData = { ...p, currentCount: count, alreadyGot };
+
+        if (isLocked && !(p.program_type === 'once' && alreadyGot)) {
+            lockedPrograms.push(programData);
+        } else {
+            activePrograms.push(programData);
+        }
+    });
+
     container.innerHTML = `
         <div class="max-w-5xl mx-auto space-y-8 animate-fade-in">
             <h2 class="text-xl font-extrabold text-white uppercase tracking-tighter leading-none mt-4">Бонусна програма</h2>
+            
+            <!-- Головний баланс -->
             <div class="glass-panel p-8 rounded-[2rem] border-t-2 border-t-rose-500 relative overflow-hidden shadow-2xl">
                 <div class="absolute -right-10 -top-10 w-32 h-32 bg-rose-500/10 rounded-full blur-3xl animate-flicker-blur"></div>
                 <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-1">Доступно зараз</p>
                 <h3 class="text-5xl font-black text-white tracking-tighter">${balance.toLocaleString()}</h3>
             </div>
+
+            <!-- БЛОК 1: АКТИВНІ ТА НАРАХОВАНІ -->
             <div class="space-y-4">
-                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-2">Статус привілеїв</h4>
-                ${programs.map(p => {
-                    const count = visitHistory.filter(v => v.services?.category === p.service_category).length;
-                    const isLocked = count < p.required_visits;
-                    const got = bonusHistory.some(t => t.reason.toUpperCase() === p.name.toUpperCase());
-                    let st = { t: 'Активний', c: 'text-emerald-500 bg-emerald-500/10', i: 'fa-circle-check text-emerald-500' };
-                    if (p.program_type === 'once' && got) st = { t: 'Нараховано', c: 'text-blue-400 bg-blue-400/10', i: 'fa-circle-check text-blue-500' };
-                    else if (isLocked) st = { t: 'Недоступно', c: 'text-zinc-600 bg-zinc-800', i: 'fa-lock text-zinc-700' };
-                    return `<div class="glass-panel p-5 rounded-[2rem] border border-white/5 relative ${isLocked ? 'opacity-40 grayscale' : ''}">
-                        <div class="flex justify-between items-start mb-4"><span class="px-2 py-1 rounded text-[7px] font-black uppercase tracking-widest ${st.c}">${st.t}</span><i class="fa-solid ${st.i} text-[10px]"></i></div>
-                        <p class="text-xs font-black text-white uppercase mb-1">${p.name}</p><p class="text-[10px] text-zinc-500 leading-relaxed">${p.description}</p>
-                        ${isLocked ? `<div class="mt-4 space-y-2"><div class="flex justify-between text-[9px] font-black uppercase text-rose-500"><span>Прогрес</span><span>${count}/${p.required_visits} візитів</span></div><div class="h-1 w-full bg-zinc-900 rounded-full overflow-hidden"><div class="h-full bg-rose-500" style="width: ${(count/p.required_visits)*100}%"></div></div></div>` : ''}
-                    </div>`;
-                }).join('')}
+                <h4 class="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] ml-2">Доступні привілеї</h4>
+                <div class="grid grid-cols-1 gap-4">
+                    ${activePrograms.length > 0 ? activePrograms.map(p => {
+                        let st = { t: 'Активний', c: 'text-emerald-500 bg-emerald-500/10', i: 'fa-circle-check text-emerald-500' };
+                        if (p.program_type === 'once' && p.alreadyGot) {
+                            st = { t: 'Нараховано', c: 'text-blue-400 bg-blue-400/10', i: 'fa-check-double text-blue-500' };
+                        }
+                        return `
+                        <div class="glass-panel p-5 rounded-[2rem] border border-white/5 relative transition-all duration-500">
+                            <div class="flex justify-between items-start mb-4">
+                                <span class="px-2 py-1 rounded text-[7px] font-black uppercase tracking-widest ${st.c}">${st.t}</span>
+                                <i class="fa-solid ${st.i} text-[10px]"></i>
+                            </div>
+                            <p class="text-xs font-black text-white uppercase mb-1">${p.name}</p>
+                            <p class="text-[10px] text-zinc-500 leading-relaxed">${p.description}</p>
+                        </div>`;
+                    }).join('') : '<p class="text-zinc-700 text-[9px] uppercase font-bold ml-2">Немає активних програм</p>'}
+                </div>
             </div>
-            <div class="space-y-4 pb-10"><h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-2">Історія операцій</h4>
-                ${bonusHistory.map(t => `<div class="flex items-center justify-between p-4 bg-white/2 rounded-2xl border border-white/5 transition"><div class="flex items-center gap-4"><i class="fa-solid ${t.amount > 0 ? 'fa-plus text-emerald-500' : 'fa-minus text-rose-500'} text-[10px]"></i><div><p class="text-xs font-bold text-white tracking-tight">${t.reason}</p><p class="text-[9px] text-zinc-600 font-black uppercase">${new Date(t.created_at).toLocaleDateString()}</p></div></div><p class="text-sm font-black ${t.amount > 0 ? 'text-emerald-400' : 'text-zinc-500'}">${t.amount > 0 ? '+' : ''}${t.amount}</p></div>`).join('')}
+
+            <!-- БЛОК 2: НЕДОСТУПНІ (В ПРОЦЕСІ) -->
+            <div class="space-y-4">
+                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-2">Ще не доступно</h4>
+                <div class="grid grid-cols-1 gap-4">
+                    ${lockedPrograms.map(p => `
+                        <div class="glass-panel p-5 rounded-[2rem] border border-white/5 relative opacity-40 grayscale transition-all duration-500">
+                            <div class="flex justify-between items-start mb-4">
+                                <span class="px-2 py-1 rounded text-[7px] font-black uppercase tracking-widest bg-zinc-800 text-zinc-400">Недоступно</span>
+                                <i class="fa-solid fa-lock text-zinc-700 text-[10px]"></i>
+                            </div>
+                            <p class="text-xs font-black text-white uppercase mb-1">${p.name}</p>
+                            <p class="text-[10px] text-zinc-500 leading-relaxed">${p.description}</p>
+                            
+                            <div class="mt-4 space-y-2">
+                                <div class="flex justify-between text-[9px] font-black uppercase text-rose-500">
+                                    <span>Прогрес</span>
+                                    <span>${p.currentCount} / ${p.required_visits} візитів</span>
+                                </div>
+                                <div class="h-1 w-full bg-zinc-900 rounded-full overflow-hidden">
+                                    <div class="h-full bg-rose-500 shadow-[0_0_8px_#f43f5e]" style="width: ${(p.currentCount/p.required_visits)*100}%"></div>
+                                </div>
+                            </div>
+                        </div>`).join('')}
+                </div>
             </div>
-        </div>`;
+
+            <!-- Історія операцій -->
+            <div class="space-y-4 pb-10">
+                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-2">Історія операцій</h4>
+                <div class="space-y-3">
+                    ${bonusHistory.map(t => `
+                        <div class="flex items-center justify-between p-4 bg-white/2 rounded-2xl border border-white/5">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-zinc-900 border border-white/5 flex items-center justify-center">
+                                    <i class="fa-solid ${t.amount > 0 ? 'fa-plus text-emerald-500' : 'fa-minus text-rose-500'} text-[10px]"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-bold text-white tracking-tight leading-none">${t.reason}</p>
+                                    <p class="text-[9px] text-zinc-600 font-black uppercase mt-1.5">${new Date(t.created_at).toLocaleDateString()}</p>
+                                </div>
+                            </div>
+                            <p class="text-sm font-black ${t.amount > 0 ? 'text-emerald-400' : 'text-zinc-500'}">${t.amount > 0 ? '+' : ''}${t.amount}</p>
+                        </div>`).join('')}
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 // 5. ЛОГІКА БРОНЮВАННЯ (ДРОПДАУН, МАЙСТРИ, КАЛЕНДАР)
