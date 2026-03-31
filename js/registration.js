@@ -6,7 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!form) return;
 
     form.reset();
-
+ const container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'toast-container';
+    document.body.appendChild(container);
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -62,15 +65,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // 5. Зберігаємо сесію та переходимо в кабінет
                 localStorage.setItem('wella_glow_user_id', newUser.id);
-                alert("Вітаємо! Ваш профіль успішно створено.");
+                window.showGlowToast("Вітаємо! Ваш профіль успішно створено.", "info");
                 window.location.href = 'client-dashboard.html';
             }
 
         } catch (error) {
             console.error('Помилка реєстрації:', error.message);
-            alert("Сталася помилка: " + error.message);
+            window.showGlowToast("Сталася помилка: " + error.message, "error");
             submitBtn.innerText = originalText;
             submitBtn.disabled = false;
         }
     });
 });
+// ГОЛОВНА ФУНКЦІЯ ЗАМІСТЬ ALERT
+window.showGlowToast = function(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast-item';
+    
+    // Вибір іконки та кольору бордера залежно від типу
+    let icon = '<i class="fa-solid fa-circle-check text-emerald-500"></i>';
+    if (type === 'error') {
+        icon = '<i class="fa-solid fa-circle-exclamation text-rose-500"></i>';
+        toast.style.borderLeft = '4px solid #f43f5e';
+    } else if (type === 'info') {
+        icon = '<i class="fa-solid fa-circle-info text-blue-400"></i>';
+        toast.style.borderLeft = '4px solid #3b82f6';
+    } else {
+        toast.style.borderLeft = '4px solid #10b981';
+    }
+
+    toast.innerHTML = `
+        <div class="text-lg">${icon}</div>
+        <div class="flex-1">
+            <p class="text-[11px] font-black uppercase tracking-widest text-white leading-tight">${message}</p>
+        </div>
+    `;
+
+    container.appendChild(toast);
+
+    // Автоматичне видалення через 4 секунди
+    setTimeout(() => {
+        toast.classList.add('toast-out');
+        setTimeout(() => toast.remove(), 500);
+    }, 4000);
+};
