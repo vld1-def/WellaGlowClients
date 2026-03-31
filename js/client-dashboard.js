@@ -75,11 +75,20 @@ const injectGlowStyles = () => {
                 align-items: center;
             }
         }
-
+        /* Додай це в injectGlowStyles, щоб примусово вбити всі ховери */
+        @media (hover: hover) {
+            .nav-inactive:hover, 
+            .master-selector:hover, 
+            .review-container button:hover {
+                background: none !important;
+                color: inherit !important;
+                border-color: rgba(255, 255, 255, 0.05) !important;
+            }
+        }
         /* Анімації та інші стилі */
         .service-dropdown-list { max-height: 0; opacity: 0; overflow: hidden; transition: all 0.3s ease; pointer-events: none; }
         .service-dropdown-list.open { max-height: 350px; opacity: 1; pointer-events: auto; overflow-y: auto; }
-        .nav-active { background: rgba(255, 255, 255, 0.1) !important; color: white !important; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .nav-active { color: white !important; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
         .nav-active i { color: #f43f5e !important; }
         .nav-inactive { color: #52525b; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
