@@ -36,17 +36,29 @@ const injectBaseStyles = () => {
 // 2. КЕРУВАННЯ НАВІГАЦІЄЮ
 window.updateSidebar = function(activeId) {
     const ids = ['nav-profile', 'nav-booking', 'nav-bonuses'];
+    
     ids.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
-        const icon = el.querySelector('i');
+
         if (id.includes(activeId)) {
-            el.classList.add('text-white', 'lg:border-l-2', 'border-rose-500', 'bg-rose-500/5', 'font-bold');
-            el.classList.remove('text-zinc-400');
+            // АКТИВНИЙ СТАН (Левітуючий скляний ефект)
+            el.classList.remove('text-zinc-500');
+            el.classList.add('text-white', 'bg-white/10', 'backdrop-blur-md', 'shadow-lg');
+            
+            // На десктопі додаємо рожеву смужку збоку
+            if (window.innerWidth >= 1024) {
+                el.classList.add('border-l-4', 'border-rose-500');
+            }
+            
+            const icon = el.querySelector('i');
             if (icon) icon.classList.add('text-rose-500');
         } else {
-            el.classList.remove('text-white', 'lg:border-l-2', 'border-rose-500', 'bg-rose-500/5', 'font-bold');
-            el.classList.add('text-zinc-400');
+            // НЕАКТИВНИЙ СТАН
+            el.classList.add('text-zinc-500');
+            el.classList.remove('text-white', 'bg-white/10', 'backdrop-blur-md', 'shadow-lg', 'border-l-4', 'border-rose-500');
+            
+            const icon = el.querySelector('i');
             if (icon) icon.classList.remove('text-rose-500');
         }
     });
