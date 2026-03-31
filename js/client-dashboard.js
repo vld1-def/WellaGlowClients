@@ -131,6 +131,25 @@ button, span, i {
     z-index: 100 !important; 
     position: absolute !important;
 }
+/* Додай або онови ці рядки всередині injectGlowStyles у блоці style.textContent */
+
+.category-btn {
+    transition: none !important; /* Прибираємо плавний перехід, щоб не було блимання */
+}
+
+/* Стиль для активної кнопки категорії */
+.category-btn.active {
+    background: rgba(244, 63, 94, 0.2) !important; /* Рожевий прозорий фон */
+    border-color: rgba(244, 63, 94, 0.5) !important; /* Рожевий бордер */
+    color: #ffffff !important; /* Білий текст */
+}
+
+/* Стиль для неактивної кнопки */
+.category-btn:not(.active) {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    color: #52525b !important; /* Сірий текст zinc-500 */
+}
     `;
     document.head.appendChild(style);
 };
@@ -526,8 +545,29 @@ function renderBonusesSection(client, programs, bonusHistory, visitHistory) {
 }
 
 // 5. ЛОГІКА БРОНЮВАННЯ (ДРОПДАУН, МАЙСТРИ, КАЛЕНДАР)
-window.filterByCategory = (cat, btn) => { document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); window.renderServicesList(cat); if (!document.getElementById('serviceDropdownList').classList.contains('open')) window.toggleServiceDropdown(); };
-window.renderServicesList = (cat) => {
+window.filterByCategory = (cat, btn) => {
+    // 1. Знаходимо всі кнопки категорій у документі
+    const allBtns = document.querySelectorAll('.category-btn');
+    
+    // 2. Очищаємо всі кнопки від класу active
+    allBtns.forEach(b => {
+        b.classList.remove('active');
+    });
+
+    // 3. Додаємо клас active саме тій кнопці, на яку натиснули
+    if (btn) {
+        btn.classList.add('active');
+    }
+
+    // 4. Запускаємо логіку фільтрації списку
+    window.renderServicesList(cat);
+
+    // 5. Якщо список закритий - відкриваємо (для зручності)
+    const dropdown = document.getElementById('serviceDropdownList');
+    if (dropdown && !dropdown.classList.contains('open')) {
+        window.toggleServiceDropdown();
+    }
+};window.renderServicesList = (cat) => {
     const services = cat === 'all' ? window.allServicesData : window.allServicesData.filter(s => s.category === cat);
     document.getElementById('servicesItemsContainer').innerHTML = services.map(s => `<div onclick="window.selectServiceUI('${s.id}', '${s.name}', ${s.price})" class="p-3 rounded-xl hover:bg-white/5 cursor-pointer flex justify-between items-center group"><span class="text-xs font-bold text-zinc-300 group-hover:text-white transition">${s.name}</span><span class="text-[10px] font-black text-zinc-500">₴${s.price}</span></div>`).join('');
 };
