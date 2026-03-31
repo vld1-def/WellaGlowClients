@@ -453,7 +453,7 @@ function renderBonusesSection(client, programs, bonusHistory, visitHistory) {
     programs.forEach(p => {
         const count = countVisits(p.service_category);
         const isLocked = count < p.required_visits;
-        const alreadyGot = bonusHistory.some(t => t.reason.toUpperCase() === p.name.toUpperCase());
+        const alreadyGot = bonusHistory.some(t => t.reason.trim().toLowerCase() === p.name.trim().toLowerCase());
 
         const programData = { ...p, currentCount: count, alreadyGot };
 
@@ -479,12 +479,19 @@ function renderBonusesSection(client, programs, bonusHistory, visitHistory) {
             <div class="space-y-4">
                 <h4 class="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] ml-2">Доступні привілеї</h4>
                 <div class="grid grid-cols-1 gap-4">
-                    ${activePrograms.length > 0 ? activePrograms.map(p => {
-                        let st = { t: 'Активний', c: 'text-emerald-500 bg-emerald-500/10', i: 'fa-circle-check text-emerald-500' };
-                        if (p.program_type === 'once' && p.alreadyGot) {
-                            st = { t: 'Нараховано', c: 'text-blue-400 bg-blue-400/10', i: 'fa-check-double text-blue-500' };
-                        }
-                        return `
+                    ${activeProgs.map(p => {
+                    // ЯКЩО БОНУС РАЗОВИЙ І ВЖЕ Є В ІСТОРІЇ
+                    let stText = 'Активно';
+                    let stClass = 'text-emerald-500 bg-emerald-500/10';
+                    let icon = 'fa-circle-check text-emerald-500';
+
+                    if (p.program_type === 'once' && p.alreadyGot) {
+                        stText = 'Отримано'; // Твоя нова назва
+                        stClass = 'text-blue-400 bg-blue-400/10';
+                        icon = 'fa-check-double text-blue-400';
+                    }
+
+                    return `
                         <div class="glass-panel p-5 rounded-[2rem] border border-white/5 relative transition-all duration-500">
                             <div class="flex justify-between items-start mb-4">
                                 <span class="px-2 py-1 rounded text-[7px] font-black uppercase tracking-widest ${st.c}">${st.t}</span>
