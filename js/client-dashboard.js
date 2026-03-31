@@ -1,5 +1,10 @@
-// js/client-dashboard.js
-// Глобальні змінні для зберігання вибору
+/**
+ * WELLA GLOW CRM - CLIENT SIDE ENGINE
+ * Version: 2.5 (Mobile Optimized SPA)
+ */
+
+// 1. ГЛОБАЛЬНІ ЗМІННІ ТА ІНІЦІАЛІЗАЦІЯ
+const userId = localStorage.getItem('wella_glow_user_id');
 window.selectedServiceId = null;
 window.selectedServiceName = null;
 window.selectedServicePrice = 0;
@@ -7,1003 +12,442 @@ window.selectedMasterId = null;
 window.selectedDateValue = null;
 window.selectedTimeValue = null;
 
-// Додай анімацію блимання блюру в загальні стилі
-const styleBonus = document.createElement('style');
-styleBonus.textContent = `
-    @keyframes pulse-blur {
-        0%, 100% { opacity: 0.1; transform: scale(1); }
-        50% { opacity: 0.3; transform: scale(1.1); }
-    }
-    .animate-flicker-blur {
-        animation: pulse-blur 4s ease-in-out infinite;
-    }
-`;
-document.head.appendChild(styleBonus);
-
-const truncate = (text, limit) => {
-    if (!text) return '';
-    return text.length > limit ? text.substring(0, limit) + "..." : text;
-};
-// Додай це на самий початок js/client-dashboard.js
-(function checkAuth() {
-    const userId = localStorage.getItem('wella_glow_user_id');
-    if (!userId) {
-        window.location.href = 'login.html'; // Відправляємо на вхід, якщо немає сесії
-    }
-})();
-
-// Далі твій звичайний код завантаження даних...
-// 1. Отримуємо ID користувача на самому початку
-const userId = localStorage.getItem('wella_glow_user_id');
-
-// 2. Одразу перевіряємо авторизацію
+// Перевірка авторизації
 if (!userId) {
     window.location.href = 'login.html';
 }
 
-// 3. Допоміжні стилі (пульсація)
-if (!document.getElementById('status-styles')) {
+// 2. СТИЛІ (RESET & ANIMATIONS)
+const injectStyles = () => {
+    if (document.getElementById('glow-app-styles')) return;
     const style = document.createElement('style');
-    style.id = 'status-styles';
+    style.id = 'glow-app-styles';
     style.textContent = `
-        @keyframes status-pulse-emerald { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
-        @keyframes status-pulse-amber { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
-        @keyframes status-pulse-rose { 0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(244, 63, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); } }
+        /* Видалення курсиву */
+        * { font-style: normal !important; }
+        
+        /* Анімації статусів */
+        @keyframes status-pulse-emerald { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); } 70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+        @keyframes status-pulse-amber { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6); } 70% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
+        @keyframes pulse-blur { 0%, 100% { opacity: 0.1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(1.1); } }
+        
         .pulse-confirmed { animation: status-pulse-emerald 2s infinite; }
         .pulse-pending { animation: status-pulse-amber 2s infinite; }
-        .pulse-rejected { animation: status-pulse-rose 2s infinite; }
+        .animate-flicker-blur { animation: pulse-blur 4s ease-in-out infinite; }
+        
+        /* Dropdown */
+        .service-dropdown-list { max-height: 0; opacity: 0; overflow: hidden; transition: all 0.3s ease; pointer-events: none; }
+        .service-dropdown-list.open { max-height: 350px; opacity: 1; pointer-events: auto; overflow-y: auto; }
+        
+        .category-btn.active { background: rgba(244, 63, 94, 0.2) !important; border-color: #f43f5e !important; color: white !important; }
+        .nav-active { background: rgba(244, 63, 94, 0.1) !important; color: #f43f5e !important; }
+        .nav-inactive { color: #52525b; }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     `;
     document.head.appendChild(style);
-}
-// 1. ПЕРЕВІРКА АВТОРИЗАЦІЇ ТА ПОЧАТКОВИЙ ЗАВАНТАЖЕННЯ
-document.addEventListener('DOMContentLoaded', () => {
-    const userId = localStorage.getItem('wella_glow_user_id');
-    if (!userId) {
-        window.location.href = 'login.html';
-        return;
-    }
-    if (userId) {
-        window.renderProfilePage();
-    }
-    // При завантаженні сторінки одразу показуємо профіль
-    window.renderProfilePage();
-});
-
-window.updateSidebar = function(activeId) {
-    const links = { 
-        'profile': document.getElementById('nav-profile'), 
-        'booking': document.getElementById('nav-booking'),
-        'bonuses': document.getElementById('nav-bonuses')
-    };
-
-    Object.values(links).forEach(link => {
-        if (!link) return;
-        // Скидаємо стилі: прибираємо рожевий колір та фони
-        link.classList.remove('text-white', 'lg:border-l-2', 'border-rose-500', 'bg-rose-500/5', 'font-bold');
-        link.classList.add('text-zinc-400');
-        
-        const icon = link.querySelector('i');
-        if (icon) icon.classList.remove('text-rose-500');
-    });
-
-    const active = links[activeId];
-    if (active) {
-        // Додаємо активні класи (lg:border-l-2 - це смужка збоку тільки на десктопі)
-        active.classList.add('text-white', 'lg:border-l-2', 'border-rose-500', 'bg-rose-500/5', 'font-bold');
-        active.classList.remove('text-zinc-400');
-        
-        const icon = active.querySelector('i');
-        if (icon) icon.classList.add('text-rose-500');
-    }
-};
-async function loadHistory(clientId) {
-    const { data: history } = await window.db
-        .from('appointment_history')
-        .select('*')
-        .eq('client_id', clientId)
-        .order('visit_date', { ascending: false });
-
-    const container = document.getElementById('historyList');
-    if (!history || history.length === 0) {
-        container.innerHTML = '<p class="text-zinc-600 text-xs uppercase font-bold">У вас ще не було візитів</p>';
-        return;
-    }
-
-    container.innerHTML = history.map(h => `
-        <div class="flex justify-between items-center group">
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center font-bold text-xs text-zinc-500 uppercase">
-                    ${new Date(h.visit_date).getDate()}.${new Date(h.visit_date).getMonth() + 1}
-                </div>
-                <div>
-                    <p class="text-sm font-bold text-white tracking-tight">${h.service_name}</p>
-                    <p class="text-[10px] text-zinc-500 mt-1 uppercase font-bold tracking-widest">Майстер: ${h.master_name} • ₴${h.price}</p>
-                </div>
-            </div>
-            <button class="px-4 py-2 border border-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition">Повторити</button>
-        </div>
-    `).join('');
-}
-
-// Знайти цей рядок у Promise.all:
-window.db.from('appointment_history')
-    .select('*, staff(name), services(name)') // Підтягуємо імена з таблиць staff та services
-    .eq('client_id', userId)
-    .order('visit_date', { ascending: false })
-// Додаємо стилі для пульсації статусів
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes status-pulse-emerald { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
-    @keyframes status-pulse-amber { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
-    @keyframes status-pulse-rose { 0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(244, 63, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); } }
-    .pulse-confirmed { animation: status-pulse-emerald 2s infinite; }
-    .pulse-pending { animation: status-pulse-amber 2s infinite; }
-    .pulse-rejected { animation: status-pulse-rose 2s infinite; }
-`;
-document.head.appendChild(style);
-
-window.renderProfileSection = async function() {
-    window.updateSidebar('profile');
-    const main = document.querySelector('main');
-    const userId = localStorage.getItem('wella_glow_user_id');
-
-    const [clientRes, historyRes, reviewsRes, upcomingAppsRes] = await Promise.all([
-        window.db.from('clients').select('*').eq('id', userId).single(),
-        window.db.from('appointment_history').select('*, staff(name), services(name)').eq('client_id', userId).order('visit_date', { ascending: false }),
-        window.db.from('reviews').select('*').eq('client_id', userId),
-        window.db.from('appointments').select('*, staff(name)').eq('client_id', userId).neq('status', 'rejected').order('appointment_date', { ascending: true })
-    ]);
-
-    const client = clientRes.data;
-    const history = historyRes.data || [];
-    const reviews = reviewsRes.data || [];
-    const upcomingApps = upcomingAppsRes.data || [];
-
-    if (!client) return;
-
-    let tier = { name: 'SILVER', color: 'zinc-400', icon: 'fa-medal', discount: '5%' };
-    if (client.ltv >= 15000) tier = { name: 'PLATINUM', color: 'cyan-400', icon: 'fa-gem', discount: '15%' };
-    else if (client.ltv >= 5000) tier = { name: 'GOLD', color: 'amber-500', icon: 'fa-crown', discount: '10%' };
-
-    const firstName = client.full_name.split(' ')[0];
-
-    main.innerHTML = `
-        <header class="flex justify-between items-center mb-10">
-            <div>
-                <h2 class="text-2xl font-extrabold text-white tracking-tight leading-none italic-none">Вітаємо, ${firstName}! ✨</h2>
-                <p class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest mt-2 leading-none italic-none">Твій день для краси сьогодні</p>
-            </div>
-            <!-- БЛОК СТАТУСУ ВИДАЛЕНО ЗВІДСИ -->
-        </header>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-1 space-y-6">
-                <div class="glass-panel p-6 rounded-[2rem] border-t-4 border-t-${tier.color} relative overflow-hidden transition-all duration-500">
-                    <div class="absolute -right-10 -top-10 w-32 h-32 bg-${tier.color}/10 rounded-full blur-3xl"></div>
-                    <div class="flex justify-between items-start mb-10">
-                        <div>
-                            <p class="text-[9px] text-zinc-500 uppercase font-black tracking-widest leading-none italic-none">Статус лояльності</p>
-                            <h3 class="text-xl font-black text-${tier.color} mt-2 uppercase tracking-tighter leading-none italic-none">Glow ${tier.name}</h3>
-                        </div>
-                        <i class="fa-solid ${tier.icon} text-${tier.color} text-xl"></i>
-                    </div>
-                    <div class="flex justify-between items-end">
-                        <div>
-                            <p class="text-3xl font-black text-white leading-none italic-none">${client.bonuses} <span class="text-xs font-bold text-zinc-600 ml-1 italic-none">балів</span></p>
-                            <p class="text-[9px] text-zinc-500 mt-2 uppercase font-black leading-none italic-none">Знижка: ${tier.discount}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="glass-panel p-6 rounded-[2.5rem]">
-                    <button onclick="window.renderBookingPage()" class="neo-gradient w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-white shadow-xl transition active:scale-95 italic-none">Записатись зараз</button>
-                </div>
-            </div>
-
-            <div class="lg:col-span-2 space-y-8">
-                ${upcomingApps.map(app => {
-                    let statusUI = { text: 'На розгляді', color: 'bg-amber-500', pulse: 'pulse-pending' };
-                    if (app.status === 'confirmed') statusUI = { text: 'Підтверджено', color: 'bg-emerald-500', pulse: 'pulse-confirmed' };
-                    
-                    return `
-                    <div class="p-6 rounded-[2.5rem] bg-rose-500/5 border border-rose-500/20 mb-4 shadow-xl relative overflow-hidden">
-                        <div class="flex justify-between items-center mb-4">
-                            <!-- КОЛІР ТЕКСТУ ЗМІНЕНО НА ZINC-400 -->
-                            <h4 class="text-xs font-black text-zinc-400 uppercase tracking-widest leading-none italic-none">Найближчий візит</h4>
-                            <span class="status-badge ${statusUI.color} ${statusUI.pulse} text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest italic-none">
-                                ${statusUI.text}
-                            </span>
-                        </div>
-                        <div class="flex justify-between items-end">
-                            <div class="flex gap-6 items-center">
-                                <div class="text-center leading-none">
-                                    <p class="text-2xl font-black text-white tracking-tighter italic-none">${new Date(app.appointment_date).getDate()}</p>
-                                    <p class="text-[10px] text-zinc-500 font-bold uppercase mt-1 italic-none">${new Date(app.appointment_date).toLocaleString('uk-UA', {month: 'long'})}</p>
-                                </div>
-                                <div class="h-10 w-px bg-white/10"></div>
-                                <div>
-                                    <p class="text-base font-bold text-white tracking-tight leading-none italic-none">${app.service_name}</p>
-                                    <p class="text-[11px] text-zinc-500 font-medium mt-2 italic-none">
-                                        Майстер: <span class="text-zinc-300 font-bold italic-none">${app.staff?.name || '---'}</span> • ${app.appointment_time}
-                                    </p>
-                                </div>
-                            </div>
-                            <button onclick="window.cancelAppointment('${app.id}', '${userId}')" class="text-[9px] font-black text-zinc-500 hover:text-rose-500 uppercase tracking-widest transition-all italic-none">Скасувати</button>
-                        </div>
-                    </div>`;
-                }).join('')}
-
-                <div class="glass-panel p-8 rounded-[2.5rem]">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none italic-none">Історія моїх візитів</h4>
-                    <div class="space-y-10 italic-none">
-                        ${history.map(h => {
-                            // ... твій код історії з відгуками без змін ...
-                        }).join('')}
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
 };
 
-// --- ФУНКЦІЯ СКАСУВАННЯ ЗАПИСУ ---
-window.cancelAppointment = async function(appointmentId, clientId) {
-    if (!confirm("Ти дійсно хочеш скасувати цей запис?")) return;
+// 3. ДОПОМІЖНІ ФУНКЦІЇ
+const truncate = (text, limit) => text && text.length > limit ? text.substring(0, limit) + "..." : text;
 
-    try {
-        // 1. Видаляємо запис з таблиці appointments
-        const { error: deleteError } = await window.db
-            .from('appointments')
-            .delete()
-            .eq('id', appointmentId);
-
-        if (deleteError) throw deleteError;
-
-        // 2. Отримуємо поточне значення cancelled_appointments
-        const { data: clientData, error: fetchError } = await window.db
-            .from('clients')
-            .select('cancelled_appointments')
-            .eq('id', clientId)
-            .single();
-
-        if (fetchError) throw fetchError;
-
-        // 3. Оновлюємо лічильник (+1)
-        const currentCancelled = clientData.cancelled_appointments || 0;
-        const { error: updateError } = await window.db
-            .from('clients')
-            .update({ cancelled_appointments: currentCancelled + 1 })
-            .eq('id', clientId);
-
-        if (updateError) throw updateError;
-
-        alert("Запис скасовано. Сподіваємось побачитись наступного разу! ✨");
-        window.renderProfilePage(); // Перемальовуємо сторінку
-
-    } catch (err) {
-        console.error("Помилка при скасуванні:", err.message);
-        alert("Не вдалося скасувати запис. Спробуй пізніше.");
-    }
-};
-async function loadReviews(clientId) {
-    const { data: reviews } = await window.db
-        .from('reviews')
-        .select('*')
-        .eq('client_id', clientId);
-
-    const container = document.getElementById('myReviewsList');
-    if (!reviews || reviews.length === 0) {
-        container.innerHTML = '<p class="text-zinc-600 text-xs uppercase font-bold">Ви ще не залишали відгуків</p>';
-        return;
-    }
-
-    container.innerHTML = reviews.map(r => `
-        <div class="p-4 bg-white/2 rounded-2xl border border-white/5">
-            <div class="flex text-amber-500 text-[8px] gap-0.5 mb-2">
-                ${Array(r.rating).fill('<i class="fa-solid fa-star"></i>').join('')}
-            </div>
-            <p class="text-xs text-zinc-300 font-medium leading-relaxed">${r.comment}</p>
-        </div>
-    `).join('');
-}
-
-function logout() {
+window.logout = function() {
     localStorage.removeItem('wella_glow_user_id');
     window.location.href = 'login.html';
-}
-// --- 1. ПЕРЕРОБЛЕНА ФУНКЦІЯ ЗАПИСУ (З ПІДТРИМКОЮ ПОВТОРУ) ---
-window.renderBookingSection = async function(preServiceId = null, preMasterId = null) {
-    window.updateSidebar('booking');
-    const main = document.querySelector('main');
-    
-    const { data: allServices } = await window.db.from('services').select('*').order('name');
-    window.allServicesData = allServices;
-
-    main.innerHTML = `
-        <header class="flex justify-between items-center mb-6 lg:mb-10">
-            <div class="max-w-[70%]">
-                <h2 class="text-xl lg:text-2xl font-extrabold text-white tracking-tight leading-none italic-none uppercase">Запис</h2>
-                <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2 leading-none italic-none">Створи свій ідеальний образ</p>
-            </div>
-            <button onclick="window.renderProfilePage()" class="p-2 text-zinc-500"><i class="fa-solid fa-xmark text-xl"></i></button>
-        </header>
-
-        <!-- КАТЕГОРІЇ (Тепер скроляться на мобілці) -->
-        <div class="flex gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar -mx-5 px-5 lg:mx-0 lg:px-0">
-            <button onclick="window.filterByCategory('all', this)" class="category-btn active px-4 py-2 rounded-xl border border-white/5 bg-white/2 text-[9px] font-black uppercase tracking-widest transition shrink-0 italic-none">Всі</button>
-            <button onclick="window.filterByCategory('Hair', this)" class="category-btn px-4 py-2 rounded-xl border border-white/5 bg-white/2 text-[9px] font-black uppercase tracking-widest transition shrink-0 italic-none text-zinc-500">Волосся</button>
-            <button onclick="window.filterByCategory('Nail', this)" class="category-btn px-4 py-2 rounded-xl border border-white/5 bg-white/2 text-[9px] font-black uppercase tracking-widest transition shrink-0 italic-none text-zinc-500">Манікюр</button>
-            <button onclick="window.filterByCategory('Makeup', this)" class="category-btn px-4 py-2 rounded-xl border border-white/5 bg-white/2 text-[9px] font-black uppercase tracking-widest transition shrink-0 italic-none text-zinc-500">Макіяж</button>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-            <div class="lg:col-span-2 space-y-5 lg:space-y-6">
-                
-                <!-- КРОК 1 -->
-                <div class="glass-panel p-5 lg:p-6 rounded-[1.5rem] lg:rounded-[2rem] relative z-dropdown">
-                    <h4 class="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-4 italic-none">1. Оберіть послугу</h4>
-                    <div class="relative">
-                        <div onclick="window.toggleServiceDropdown()" id="serviceSelector" class="input-dark w-full flex justify-between items-center cursor-pointer border border-white/10">
-                            <span id="selectedServiceText" class="italic-none text-zinc-400 text-xs truncate mr-2">Оберіть процедуру...</span>
-                            <i class="fa-solid fa-chevron-down text-[10px] text-zinc-600" id="dropdownArrow"></i>
-                        </div>
-                        <div id="serviceDropdownList" class="service-dropdown-list glass-panel absolute w-full mt-2 rounded-2xl border border-white/10 bg-[#0a0a0b] shadow-2xl">
-                            <div id="servicesItemsContainer" class="p-2 space-y-1"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- КРОК 2 -->
-                <div id="mastersSection" class="glass-panel p-5 lg:p-6 rounded-[1.5rem] lg:rounded-[2rem] opacity-30 pointer-events-none relative z-step-2">
-                    <h4 class="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-4 italic-none">2. Оберіть майстра</h4>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" id="mastersGrid"></div>
-                </div>
-
-                <!-- КРОК 3 -->
-                <div id="calendarSection" class="glass-panel p-5 lg:p-6 rounded-[1.5rem] lg:rounded-[2rem] opacity-30 pointer-events-none relative z-step-3">
-                    <h4 class="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-4 italic-none">3. Дата та час</h4>
-                    <div id="calendarGrid" class="grid grid-cols-7 gap-1 sm:gap-2 text-center text-[10px] italic-none"></div>
-                    <div id="timeSlots" class="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-6 italic-none"></div>
-                </div>
-            </div>
-
-            <!-- ПРАВА ПАНЕЛЬ (Підсумок) -->
-            <div class="lg:col-span-1">
-                <div class="glass-panel p-6 lg:p-8 rounded-[1.5rem] lg:rounded-[2.5rem] lg:sticky lg:top-10 border-t-4 border-t-rose-500 shadow-2xl z-10">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-6 text-center italic-none">Ваше бронювання</h4>
-                    <div class="space-y-3 mb-6 italic-none">
-                        <div class="flex justify-between text-[10px] font-bold"><span class="text-zinc-500 uppercase">Послуга</span><span id="sumService" class="text-white text-right truncate ml-4">---</span></div>
-                        <div class="flex justify-between text-[10px] font-bold"><span class="text-zinc-500 uppercase">Майстер</span><span id="sumMaster" class="text-white text-right">---</span></div>
-                        <div class="flex justify-between text-[10px] font-bold"><span class="text-zinc-500 uppercase">Дата</span><span id="sumDate" class="text-white">---</span></div>
-                        <div class="h-px bg-white/5 my-3"></div>
-                        <div class="flex justify-between items-center"><span class="text-xs font-black text-white uppercase tracking-tighter">До сплати</span><span id="sumPrice" class="text-xl font-black text-emerald-400">₴0</span></div>
-                    </div>
-                    <button onclick="window.confirmBooking()" class="neo-gradient w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-xl transition active:scale-95 italic-none">Підтвердити запис</button>
-                </div>
-            </div>
-        </div>
-    `;
-
-    window.renderServicesList('all');
-
-    if (preServiceId) {
-        setTimeout(() => {
-            window.selectServiceUI(preServiceId, 'Завантаження...', 0, preMasterId);
-        }, 300);
-    }
 };
 
-// 1. Ефект наведення (підсвічує зірки до тієї, на яку навели)
-window.hoverStars = function(starEl, rating) {
-    const row = starEl.closest('.stars-row');
-    const stars = row.querySelectorAll('.fa-star');
-    stars.forEach((s, i) => {
-        s.classList.toggle('text-amber-500', i < rating);
-        s.classList.toggle('text-zinc-800', i >= rating);
-    });
-};
-
-// 2. Скидання підсвітки (якщо клієнт просто прибрав курсор, не клікнувши)
-window.resetStars = function(rowEl) {
-    const parent = rowEl.closest('.review-container');
-    const inputBlock = parent.querySelector('.review-input-block');
-    
-    // Якщо інпут уже відкритий (був клік), не скидаємо зірки
-    if (!inputBlock.classList.contains('hidden')) {
-        const savedRating = parseInt(inputBlock.dataset.rating);
-        const stars = rowEl.querySelectorAll('.fa-star');
-        stars.forEach((s, i) => {
-            s.classList.toggle('text-amber-500', i < savedRating);
-            s.classList.toggle('text-zinc-800', i >= savedRating);
-        });
-        return;
-    }
-
-    // Якщо кліку не було — тушимо всі зірки
-    rowEl.querySelectorAll('.fa-star').forEach(s => {
-        s.classList.remove('text-amber-500');
-        s.classList.add('text-zinc-800');
-    });
-};
-
-// 3. Клік (фіксує рейтинг та відкриває інпут)
-window.showReviewInput = function(starEl, rating, appointmentId) {
-    const parent = starEl.closest('.review-container');
-    if (!parent) return;
-
-    const inputBlock = parent.querySelector('.review-input-block');
-    const quickReplies = parent.querySelector('.quick-replies');
-    const stars = parent.querySelectorAll('.fa-star');
-
-    // 1. Підсвічуємо зірочки
-    stars.forEach((s, i) => {
-        s.classList.toggle('text-amber-500', i < rating);
-        s.classList.toggle('text-zinc-800', i >= rating);
-    });
-
-    // 2. Показуємо блок вводу
-    if (inputBlock) {
-        inputBlock.classList.remove('hidden');
-        inputBlock.dataset.rating = rating;
-    }
-    
-    // 3. Перевіряємо рейтинг для швидких відповідей
-    if (quickReplies) {
-        if (rating >= 4) {
-            quickReplies.classList.remove('hidden');
-        } else {
-            quickReplies.classList.add('hidden');
-        }
-    }
-};
-// 4. Відправка в базу (з використанням master_id)
-// Відправка відгуку
-window.submitReview = async function(btn, appointmentId, masterId) {
-    const parent = btn.closest('.review-container');
-    const input = parent.querySelector('input');
-    const rating = parent.querySelector('.review-input-block').dataset.rating;
-    const userId = localStorage.getItem('wella_glow_user_id');
-
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i>';
-
-    const { error } = await window.db.from('reviews').insert([{
-        client_id: userId,
-        appointment_id: appointmentId,
-        master_id: masterId,
-        rating: parseInt(rating),
-        comment: input.value.trim(),
-        created_at: new Date()
-    }]);
-
-    if (!error) {
-        // Повідомлення про успіх
-        const section = parent.querySelector('.review-input-block');
-        parent.querySelector('.stars-row')?.parentElement.classList.add('hidden'); // ховаємо зірки
-        section.innerHTML = `
-            <div class="flex items-center justify-center gap-2 text-[9px] font-black text-emerald-500 uppercase tracking-widest italic-none py-2">
-                <i class="fa-solid fa-check-double"></i> Відгук надіслано! Дякуємо ✨
-            </div>
-        `;
-        section.classList.remove('hidden');
-
-        // Через 3 секунди перемальовуємо сторінку, щоб показати фінальний стан (зірки + текст)
-        setTimeout(() => {
-            window.renderProfilePage();
-        }, 2500);
-
-    } else {
-        alert("Помилка: " + error.message);
-        btn.disabled = false;
-        btn.innerText = "OK";
-    }
-};
-// --- 3. ЗАВАНТАЖЕННЯ ГРАФІКА МАЙСТРА ---
-window.loadMasterAvailability = async function(el, masterId, name) {
-    document.querySelectorAll('.master-selector').forEach(item => item.classList.remove('border-rose-500', 'bg-rose-500/10'));
-    el.classList.add('border-rose-500', 'bg-rose-500/10');
-    
-    window.selectedMasterId = masterId; // ЗБЕРІГАЄМО ID
-    document.getElementById('sumMaster').innerText = name;
-
-    const section = document.getElementById('calendarSection');
-    section.classList.remove('opacity-30', 'pointer-events-none');
-
-    const { data: shifts } = await window.db.from('staff_shifts').select('shift_date').eq('staff_id', masterId);
-    const availableDates = shifts?.map(s => s.shift_date) || [];
-
-    renderCalendar(availableDates);
-};
-
-// --- 4. МАЛЮЄМО КАЛЕНДАР ---
-function renderCalendar(availableDates) {
-    const grid = document.getElementById('calendarGrid');
-    if (!grid) return;
-    grid.innerHTML = '';
-    
-    const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
-    days.forEach(d => grid.innerHTML += `<div class="text-[9px] font-black text-zinc-600 uppercase mb-2">${d}</div>`);
-
-    const today = new Date();
-    
-    for (let i = 0; i < 14; i++) {
-        const date = new Date();
-        date.setDate(today.getDate() + i);
-
-        // ПРАВИЛЬНЕ ФОРМУВАННЯ ДАТИ (локальне YYYY-MM-DD)
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`; 
-
-        // Перевіряємо чи є ця дата у масиві доступних дат від майстра
-        const isAvailable = availableDates.includes(dateStr);
-        
-        grid.innerHTML += `
-            <button 
-                onclick="${isAvailable ? `window.selectDate(this, '${dateStr}')` : ''}" 
-                class="calendar-day p-3 rounded-xl text-[11px] font-bold border border-white/5 transition
-                ${isAvailable ? 'bg-white/5 text-white hover:border-rose-500' : 'opacity-10 cursor-not-allowed'}"
-                ${!isAvailable ? 'disabled' : ''}>
-                ${date.getDate()}
-            </button>
-        `;
-    }
-}
-
-// --- ВИБІР ДАТИ ТА ПЕРЕВІРКА ВІЛЬНИХ СЛОТІВ ---
-window.selectDate = async function(el, date) {
-    // 1. Візуальний стиль вибраної дати
-    document.querySelectorAll('.calendar-day').forEach(d => {
-        d.classList.remove('bg-rose-500', 'text-white');
-        d.classList.add('bg-white/5');
-    });
-    el.classList.add('bg-rose-500', 'text-white');
-    el.classList.remove('bg-white/5');
-
-    window.selectedDateValue = date;
-    const timeGrid = document.getElementById('timeSlots');
-    timeGrid.innerHTML = '<p class="col-span-4 text-[10px] text-zinc-600 uppercase font-bold animate-pulse">Перевірка часу...</p>';
-
-    try {
-        // 2. Отримуємо робочу зміну майстра
-        const { data: shift } = await window.db
-            .from('staff_shifts')
-            .select('start_time, end_time')
-            .eq('staff_id', window.selectedMasterId)
-            .eq('shift_date', date)
-            .single();
-
-        // 3. Отримуємо вже існуючі записи (appointments) на цей день
-        const { data: bookedSlots } = await window.db
-            .from('appointments')
-            .select('appointment_time')
-            .eq('master_id', window.selectedMasterId)
-            .eq('appointment_date', date)
-            .not('status', 'eq', 'rejected'); // Не рахуємо відхилені записи
-
-        if (!shift) {
-            timeGrid.innerHTML = '<p class="col-span-4 text-[10px] text-rose-400 uppercase font-bold">Майстер вихідний у цей день</p>';
-            return;
-        }
-
-        // 4. ГЕНЕРУЄМО СІТКУ ЧАСУ (наприклад, кожні 60 хв)
-        const slots = [];
-        let current = parseInt(shift.start_time.split(':')[0]);
-        const end = parseInt(shift.end_time.split(':')[0]);
-
-        while (current < end) {
-            const timeStr = `${current}:00`;
-            // Перевіряємо чи час заброньовано
-            const isBooked = bookedSlots.some(b => b.appointment_time.startsWith(timeStr));
-            slots.push({ time: timeStr, booked: isBooked });
-            current++;
-        }
-
-        // 5. МАЛЮЄМО КНОПКИ ЧАСУ
-        timeGrid.innerHTML = slots.map(s => `
-            <button 
-                onclick="${s.booked ? '' : 'window.selectTime(this)'}" 
-                class="time-btn p-2 rounded-lg border border-white/5 text-[10px] font-black transition
-                ${s.booked ? 'opacity-10 cursor-not-allowed bg-zinc-900' : 'bg-white/5 hover:border-rose-500 text-zinc-400'}"
-                ${s.booked ? 'disabled' : ''}>
-                ${s.time}
-                ${s.booked ? '<span class="block text-[7px] text-rose-500">Зайнято</span>' : ''}
-            </button>
-        `).join('');
-
-    } catch (err) {
-        console.error(err);
-        timeGrid.innerHTML = '<p class="text-xs text-rose-500">Помилка завантаження</p>';
-    }
-
-    window.updateSummary();
-};
-
-// Допоміжні змінні для збереження вибору
-let selectedMasterId = null;
-let selectedTimeValue = null;
-
-function selectMaster(el, id, name) {
-    document.querySelectorAll('.master-selector').forEach(item => item.classList.remove('border-rose-500', 'bg-rose-500/10'));
-    el.classList.add('border-rose-500', 'bg-rose-500/10');
-    selectedMasterId = id;
-    document.getElementById('sumMaster').innerText = name;
-}
-
-// ФУНКЦІЯ: Вибір часу
-window.selectTime = function(el) {
-    document.querySelectorAll('.time-btn').forEach(item => {
-        item.classList.remove('bg-rose-500', 'text-white');
-        item.classList.add('bg-white/5', 'text-zinc-400');
-    });
-    
-    el.classList.add('bg-rose-500', 'text-white');
-    el.classList.remove('bg-white/5', 'text-zinc-400');
-    
-    window.selectedTimeValue = el.innerText.split('\n')[0].trim(); // ЗБЕРІГАЄМО ЧАС
-    window.updateSummary(); 
-};
-
-window.updateSummary = function() {
-    // 1. Отримуємо дані про послугу
-    const serviceSelect = document.getElementById('selectService');
-    if (!serviceSelect) return;
-
-    const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
-    const serviceName = serviceSelect.value !== "0" ? serviceSelect.value : "---";
-    const price = selectedOption ? selectedOption.dataset.price : 0;
-
-    // 2. Отримуємо елементи підсумку
-    const elSumService = document.getElementById('sumService');
-    const elSumPrice = document.getElementById('sumPrice');
-    const elSumDate = document.getElementById('sumDate');
-
-    // 3. Відображаємо назву послуги та ціну
-    if (elSumService) elSumService.innerText = serviceName;
-    if (elSumPrice) elSumPrice.innerText = "₴" + (price || 0);
-    
-    // 4. Формуємо рядок дати та часу
-    if (elSumDate) {
-        let displayDate = "---";
-        
-        if (window.selectedDateValue) {
-            // Форматуємо дату з 2026-03-31 у 31.03
-            const d = new Date(window.selectedDateValue);
-            displayDate = d.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit' });
-        }
-
-        const displayTime = window.selectedTimeValue ? " о " + window.selectedTimeValue : "";
-        elSumDate.innerText = (window.selectedDateValue ? displayDate : "---") + displayTime;
-    }
-};
-
-// --- ФІНАЛЬНА ФУНКЦІЯ ПІДТВЕРДЖЕННЯ ЗАПИСУ ---
-window.confirmBooking = async function() {
-    const clientId = localStorage.getItem('wella_glow_user_id');
-
-    // Перевірка всіх обов'язкових даних
-    if (!window.selectedServiceId || !window.selectedMasterId || !window.selectedDateValue || !window.selectedTimeValue) {
-        alert("Будь ласка, оберіть послугу, майстра, дату та час візиту.");
-        return;
-    }
-
-    // Блокуємо кнопку
-    const btn = event.target;
-    btn.innerText = "ЗБЕРЕЖЕННЯ...";
-    btn.disabled = true;
-
-    try {
-        const { error } = await window.db
-            .from('appointments')
-            .insert([{
-                client_id: clientId,
-                master_id: window.selectedMasterId,
-                service_id: window.selectedServiceId, // Додаємо ID послуги
-                service_name: window.selectedServiceName, // Додаємо назву для історії
-                appointment_date: window.selectedDateValue,
-                appointment_time: window.selectedTimeValue,
-                price: window.selectedServicePrice,
-                status: 'waiting'
-            }]);
-
-        if (error) throw error;
-
-        alert("Запис успішно створено! ✨");
-        
-        // Скидаємо змінні
-        window.selectedServiceId = null;
-        window.selectedMasterId = null;
-        window.selectedDateValue = null;
-        window.selectedTimeValue = null;
-
-        window.renderProfilePage();
-
-    } catch (err) {
-        console.error(err);
-        alert("Помилка: " + err.message);
-        btn.innerText = "Підтвердити запис";
-        btn.disabled = false;
-    }
-};
-// --- ВИПРАВЛЕНА ФУНКЦІЯ ФІЛЬТРАЦІЇ МАЙСТРІВ ---
-window.filterMastersByService = async function(serviceId, preMasterId = null) {
-    const mastersGrid = document.getElementById('mastersGrid');
-    const mastersSection = document.getElementById('mastersSection');
-    
-    if (!serviceId || serviceId === "0") {
-        if (mastersSection) mastersSection.classList.add('opacity-30', 'pointer-events-none');
-        return;
-    }
-
-    // Активуємо блок майстрів
-    if (mastersSection) mastersSection.classList.remove('opacity-30', 'pointer-events-none');
-    if (mastersGrid) mastersGrid.innerHTML = `<p class="col-span-full text-center animate-pulse text-[10px] text-rose-500 font-bold uppercase py-4 italic-none">Шукаємо фахівців...</p>`;
-
-    // Запит до бази
-    const { data: masters, error } = await window.db
-        .from('staff_services')
-        .select(`staff (id, name, role, is_active)`)
-        .eq('service_id', serviceId);
-
-    if (error || !masters || !masters.length) {
-        if (mastersGrid) mastersGrid.innerHTML = `<p class="col-span-full text-center text-[10px] text-zinc-500 font-bold uppercase py-4 italic-none">Майстрів не знайдено</p>`;
-        return;
-    }
-
-    // Рендеримо картки
-    if (mastersGrid) {
-        mastersGrid.innerHTML = masters.map(m => `
-            <div id="master-card-${m.staff.id}" 
-                 onclick="window.loadMasterAvailability(this, '${m.staff.id}', '${m.staff.name}')" 
-                 class="master-selector border border-white/5 p-3 sm:p-4 rounded-2xl bg-white/2 hover:border-rose-500/50 transition cursor-pointer text-center group">
-                <img src="https://ui-avatars.com/api/?name=${m.staff.name.replace(' ','+')}&background=111113&color=fff" class="w-10 h-10 rounded-full mx-auto mb-2 border border-white/10">
-                <p class="text-[10px] sm:text-[11px] font-bold text-white tracking-tight leading-none italic-none">${m.staff.name}</p>
-                <p class="text-[7px] sm:text-[8px] text-zinc-500 uppercase mt-2 font-bold italic-none leading-none">${m.staff.role || 'Майстер'}</p>
-            </div>
-        `).join('');
-    }
-
-    if (preMasterId) {
-        setTimeout(() => {
-            const masterCard = document.getElementById(`master-card-${preMasterId}`);
-            if (masterCard) masterCard.click();
-        }, 150);
-    }
-};
-// 1. Ефект наведення (підсвічує зірки до тієї, на яку навели)
-window.hoverStars = function(starEl, rating) {
-    const row = starEl.closest('.stars-row');
-    const stars = row.querySelectorAll('.fa-star');
-    stars.forEach((s, i) => {
-        s.classList.toggle('text-amber-500', i < rating);
-        s.classList.toggle('text-zinc-800', i >= rating);
-    });
-};
-
-// 2. Скидання підсвітки (якщо клієнт просто прибрав курсор, не клікнувши)
-window.resetStars = function(rowEl) {
-    const parent = rowEl.closest('.review-container');
-    const inputBlock = parent.querySelector('.review-input-block');
-    
-    // Якщо інпут уже відкритий (був клік), не скидаємо зірки
-    if (!inputBlock.classList.contains('hidden')) {
-        const savedRating = parseInt(inputBlock.dataset.rating);
-        const stars = rowEl.querySelectorAll('.fa-star');
-        stars.forEach((s, i) => {
-            s.classList.toggle('text-amber-500', i < savedRating);
-            s.classList.toggle('text-zinc-800', i >= savedRating);
-        });
-        return;
-    }
-
-    // Якщо кліку не було — тушимо всі зірки
-    rowEl.querySelectorAll('.fa-star').forEach(s => {
-        s.classList.remove('text-amber-500');
-        s.classList.add('text-zinc-800');
-    });
-};
-// Вставити текст із швидкої кнопки в інпут
-window.setQuickText = function(btn, text) {
-    const parent = btn.closest('.review-input-block');
-    const input = parent.querySelector('input');
-    input.value = text;
-};
-function renderBonusesSection(client, programs, bonusHistory, visitHistory) {
-    const container = document.getElementById('page-bonuses');
-    
-    const balance = client?.bonuses || 0;
-    
-    container.innerHTML = `
-        <div class="space-y-8 animate-fade-in">
-            <!-- Заголовок -->
-            <div class="mt-4">
-                <h2 class="text-3xl font-black text-white uppercase tracking-tighter leading-none">Бонусна<br>програма</h2>
-                <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2">Твої накопичення та привілеї</p>
-            </div>
-
-            <!-- Баланс (великий та чіткий) -->
-            <div class="glass-panel p-8 rounded-[2.5rem] relative overflow-hidden border-t-2 border-t-rose-500">
-                <div class="absolute -right-10 -top-10 w-32 h-32 bg-rose-500/10 rounded-full blur-3xl animate-flicker-blur"></div>
-                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-1">Доступно зараз</p>
-                <h3 class="text-5xl font-black text-white tracking-tighter">${balance.toLocaleString()}</h3>
-            </div>
-
-            <!-- Список програм -->
-            <div class="space-y-4">
-                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-2">Статус привілеїв</h4>
-                ${programs.map(p => {
-                    const alreadyGot = bonusHistory.some(t => t.reason.toUpperCase() === p.name.toUpperCase());
-                    const status = alreadyGot ? { text: 'Нараховано', class: 'text-blue-400 bg-blue-400/10' } : { text: 'Активний', class: 'text-emerald-500 bg-emerald-500/10' };
-
-                    return `
-                    <div class="glass-panel p-6 rounded-[2rem] border border-white/5 relative">
-                        <div class="flex justify-between items-start mb-4">
-                            <span class="px-2 py-1 rounded text-[8px] font-black uppercase tracking-widest ${status.class}">${status.text}</span>
-                            <i class="fa-solid fa-circle-check text-emerald-500 text-[10px]"></i>
-                        </div>
-                        <h5 class="text-sm font-black text-white uppercase tracking-tight mb-1">${p.name}</h5>
-                        <p class="text-[11px] text-zinc-500 font-medium leading-relaxed">${p.description}</p>
-                    </div>`;
-                }).join('')}
-            </div>
-        </div>
-    `;
-}
-const dropdownStyle = document.createElement('style');
-dropdownStyle.textContent = `
-    .service-dropdown-list {
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.3s ease-in-out, opacity 0.2s;
-        opacity: 0;
-        pointer-events: none;
-    }
-    .service-dropdown-list.open {
-        max-height: 350px;
-        opacity: 1;
-        pointer-events: auto;
-        overflow-y: auto;
-    }
-    .z-dropdown { z-index: 100 !important; }
-    .z-step-2 { z-index: 50 !important; }
-    .z-step-3 { z-index: 40 !important; }
-    .category-btn.active {
-        background: rgba(244, 63, 94, 0.2) !important;
-        border-color: #f43f5e !important;
-        color: white !important;
-    }
-`;
-document.head.appendChild(dropdownStyle);
-
-// Відкрити/Закрити випадаючий список
-window.toggleServiceDropdown = function() {
-    const list = document.getElementById('serviceDropdownList');
-    const arrow = document.getElementById('dropdownArrow');
-    list.classList.toggle('open');
-    arrow.classList.toggle('rotate-180');
-};
-
-// Фільтрація за кнопками категорій
-window.filterByCategory = function(category, btn) {
-    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-
-    window.renderServicesList(category);
-    
-    // Автоматично відкриваємо список, щоб клієнт бачив результат
-    const list = document.getElementById('serviceDropdownList');
-    if (!list.classList.contains('open')) window.toggleServiceDropdown();
-};
-
-// Рендер пунктів всередині списку
-window.renderServicesList = function(category) {
-    const container = document.getElementById('servicesItemsContainer');
-    const services = category === 'all' 
-        ? window.allServicesData 
-        : window.allServicesData.filter(s => s.category === category);
-
-    container.innerHTML = services.map(s => `
-        <div onclick="window.selectServiceUI('${s.id}', '${s.name}', ${s.price})" 
-             class="p-3 rounded-xl hover:bg-white/5 cursor-pointer transition flex justify-between items-center group">
-            <span class="text-xs font-bold text-zinc-300 group-hover:text-white transition italic-none">${s.name}</span>
-            <span class="text-[10px] font-black text-zinc-500 italic-none">₴${s.price}</span>
-        </div>
-    `).join('');
-};
-
-// Вибір конкретної послуги
-window.selectServiceUI = function(id, name, price, preMasterId = null) {
-    const textEl = document.getElementById('selectedServiceText');
-    if (textEl) {
-        textEl.innerText = name;
-        textEl.classList.add('text-white', 'font-extrabold');
-    }
-    
-    window.selectedServiceId = id;
-    window.selectedServiceName = name;
-    window.selectedServicePrice = price;
-
-    const sumService = document.getElementById('sumService');
-    const sumPrice = document.getElementById('sumPrice');
-    if (sumService) sumService.innerText = name;
-    if (sumPrice) sumPrice.innerText = "₴" + price;
-
-    // Закриваємо список
-    const list = document.getElementById('serviceDropdownList');
-    const arrow = document.getElementById('dropdownArrow');
-    if (list) list.classList.remove('open');
-    if (arrow) arrow.classList.remove('rotate-180');
-
-    // ТУТ ВИПРАВЛЕНО: передаємо ID напряму
-    window.filterMastersByService(id, preMasterId);
-};
-// --- 1. ЛОГІКА СКРОЛУ ---
+// 4. ЛОГІКА НАВІГАЦІЇ (SPA)
 window.scrollToPage = function(index) {
     const scroller = document.getElementById('main-scroller');
-    scroller.scrollTo({
-        left: window.innerWidth * index,
-        behavior: 'smooth'
-    });
-    window.updateNav(index);
+    if (scroller) {
+        scroller.scrollTo({ left: window.innerWidth * index, behavior: 'smooth' });
+        window.updateNav(index);
+    }
 };
 
-// --- 2. ЗАВАНТАЖЕННЯ ВСІХ ДАНИХ ПРИ СТАРТІ ---
+window.updateNav = function(index) {
+    const ids = ['btn-profile', 'btn-booking', 'btn-bonuses'];
+    ids.forEach((id, i) => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.classList.toggle('nav-active', i === index);
+            btn.classList.toggle('nav-inactive', i !== index);
+        }
+    });
+};
+
+// 5. ЗАВАНТАЖЕННЯ ДАНИХ (MAIN)
 document.addEventListener('DOMContentLoaded', async () => {
-    const userId = localStorage.getItem('wella_glow_user_id');
-    if (!userId) return (window.location.href = 'login.html');
+    injectStyles();
+    
+    // Показуємо скелетон/лоадер
+    document.getElementById('page-profile').innerHTML = `<div class="flex items-center justify-center h-64"><i class="fa-solid fa-circle-notch animate-spin text-rose-500 text-2xl"></i></div>`;
 
-    // Отримуємо ВСЕ одним махом для швидкості
-    const [client, history, reviews, upcoming, services, masters, bonusPrograms, bonusHistory] = await Promise.all([
-        window.db.from('clients').select('*').eq('id', userId).single(),
-        window.db.from('appointment_history').select('*, staff(name), services(name)').eq('client_id', userId).order('visit_date', { ascending: false }),
-        window.db.from('reviews').select('*').eq('client_id', userId),
-        window.db.from('appointments').select('*, staff(name)').eq('client_id', userId).neq('status', 'rejected').order('appointment_date', { ascending: true }),
-        window.db.from('services').select('*').order('name'),
-        window.db.from('staff').select('*').eq('is_active', true),
-        window.db.from('bonus_programs').select('*').eq('is_active', true),
-        window.db.from('bonus_history').select('*').eq('client_id', userId).order('created_at', { ascending: false })
-    ]);
+    try {
+        const [client, history, reviews, upcoming, services, masters, bonusPrograms, bonusHistory] = await Promise.all([
+            window.db.from('clients').select('*').eq('id', userId).single(),
+            window.db.from('appointment_history').select('*, staff(name), services(name)').eq('client_id', userId).order('visit_date', { ascending: false }),
+            window.db.from('reviews').select('*').eq('client_id', userId),
+            window.db.from('appointments').select('*, staff(name)').eq('client_id', userId).neq('status', 'rejected').order('appointment_date', { ascending: true }),
+            window.db.from('services').select('*').order('name'),
+            window.db.from('staff').select('*').eq('is_active', true),
+            window.db.from('bonus_programs').select('*').eq('is_active', true),
+            window.db.from('bonus_history').select('*').eq('client_id', userId).order('created_at', { ascending: false })
+        ]);
 
-    // Зберігаємо в window для доступу з інших функцій
-    window.allServicesData = services.data;
-    window.userData = client.data;
+        window.allServicesData = services.data;
+        window.allMastersData = masters.data;
 
-    // Рендеримо всі три секції в фоні
-    renderProfileSection(client.data, history.data, reviews.data, upcoming.data);
-    renderBookingSection(services.data, masters.data);
-    renderBonusesSection(client.data, bonusPrograms.data, bonusHistory.data, history.data);
-
-    window.updateSidebar('profile');
+        renderProfileSection(client.data, history.data, reviews.data, upcoming.data);
+        renderBookingSection();
+        renderBonusesSection(client.data, bonusPrograms.data, bonusHistory.data, history.data);
+        
+        window.updateNav(0);
+    } catch (err) {
+        console.error("Критична помилка завантаження:", err);
+    }
 });
 
-// --- 3. ПРИКЛАД КОМПАКТНОГО БЛОКУ ЛОЯЛЬНОСТІ (ЗМЕНШЕНО) ---
+// --- СЕКЦІЯ 1: ПРОФІЛЬ ---
 function renderProfileSection(client, history, reviews, upcoming) {
-    const container = document.getElementById('section-profile');
+    const container = document.getElementById('page-profile');
     const firstName = client.full_name.split(' ')[0];
     
-    // Ранг
     let tier = { name: 'SILVER', color: 'zinc-400', icon: 'fa-medal' };
     if (client.ltv >= 15000) tier = { name: 'PLATINUM', color: 'cyan-400', icon: 'fa-gem' };
     else if (client.ltv >= 5000) tier = { name: 'GOLD', color: 'amber-500', icon: 'fa-crown' };
 
     container.innerHTML = `
-        <h2 class="text-xl font-black text-white mb-6">Вітаємо, ${firstName}! ✨</h2>
-        
-        <!-- КАРТКА ЛОЯЛЬНОСТІ (ЗМЕНШЕНА) -->
-        <div class="glass-panel p-4 sm:p-6 rounded-[1.5rem] border-t-4 border-t-${tier.color} relative overflow-hidden mb-6">
-            <div class="flex justify-between items-center">
+        <div class="space-y-8 animate-fade-in">
+            <header class="flex justify-between items-center">
                 <div>
-                    <p class="text-[8px] text-zinc-500 uppercase font-black tracking-widest">Статус лояльності</p>
-                    <h3 class="text-lg font-black text-${tier.color} uppercase tracking-tighter italic-none">${tier.name}</h3>
+                    <h2 class="text-2xl font-extrabold text-white tracking-tight">Вітаємо, ${firstName}!</h2>
+                    <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-1">Твій Glow Кабінет</p>
                 </div>
-                <i class="fa-solid ${tier.icon} text-${tier.color} text-lg"></i>
+                <button onclick="logout()" class="text-zinc-700 hover:text-rose-500 transition"><i class="fa-solid fa-power-off"></i></button>
+            </header>
+
+            <div class="glass-panel p-5 rounded-[1.5rem] border-t-4 border-t-${tier.color} relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 w-32 h-32 bg-${tier.color}/10 rounded-full blur-3xl"></div>
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-[8px] text-zinc-500 uppercase font-black tracking-widest mb-1">Статус лояльності</p>
+                        <h3 class="text-lg font-black text-${tier.color} uppercase tracking-tighter">${tier.name} MEMBER</h3>
+                    </div>
+                    <i class="fa-solid ${tier.icon} text-${tier.color} text-xl"></i>
+                </div>
+                <div class="mt-6 flex justify-between items-end">
+                    <p class="text-3xl font-black text-white">${client.bonuses} <span class="text-xs text-zinc-600 ml-1">балів</span></p>
+                    <button onclick="window.scrollToPage(1)" class="px-4 py-2 bg-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-white border border-white/5">Записатись</button>
+                </div>
             </div>
-            <div class="mt-4">
-                <p class="text-2xl font-black text-white leading-none">${client.bonuses} <span class="text-[10px] text-zinc-500 font-bold uppercase ml-1">балів</span></p>
+
+            <!-- Найближчі візити -->
+            <div class="space-y-4">
+                ${upcoming.map(app => {
+                    let st = { text: 'На розгляді', color: 'bg-amber-500', pulse: 'pulse-pending' };
+                    if (app.status === 'confirmed') st = { text: 'Підтверджено', color: 'bg-emerald-500', pulse: 'pulse-confirmed' };
+                    return `
+                    <div class="glass-panel p-5 rounded-[2rem] border border-white/5 shadow-xl relative overflow-hidden">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Найближчий візит</h4>
+                            <span class="status-badge ${st.color} ${st.pulse} text-white px-3 py-1 rounded-full text-[7px] font-black uppercase tracking-widest">${st.text}</span>
+                        </div>
+                        <div class="flex justify-between items-end">
+                            <div class="flex gap-4 items-center">
+                                <div class="text-center">
+                                    <p class="text-xl font-black text-white">${new Date(app.appointment_date).getDate()}</p>
+                                    <p class="text-[9px] text-zinc-500 font-bold uppercase">${new Date(app.appointment_date).toLocaleString('uk-UA', {month: 'short'})}</p>
+                                </div>
+                                <div class="h-8 w-px bg-white/10"></div>
+                                <div>
+                                    <p class="text-sm font-bold text-white tracking-tight">${app.service_name}</p>
+                                    <p class="text-[10px] text-zinc-500 mt-1">Майстер: <span class="text-zinc-300 font-bold">${app.staff?.name || '---'}</span> • ${app.appointment_time}</p>
+                                </div>
+                            </div>
+                            <button onclick="window.cancelAppointment('${app.id}', '${userId}')" class="text-[9px] font-black text-zinc-500 hover:text-rose-500 uppercase tracking-widest transition-all">Скасувати</button>
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>
+
+            <!-- Історія -->
+            <div class="glass-panel p-6 rounded-[2.5rem]">
+                <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8">Історія візитів</h4>
+                <div class="space-y-8">
+                    ${history.map(h => {
+                        const review = reviews.find(r => r.appointment_id === h.id);
+                        return `
+                        <div class="review-container flex flex-col">
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 bg-zinc-900 rounded-xl flex items-center justify-center font-bold text-[10px] text-zinc-500 uppercase">
+                                        ${new Date(h.visit_date).toLocaleDateString('uk-UA', {day: '2-digit', month: '2-digit'})}
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-bold text-white tracking-tight">${h.services?.name || 'Послуга'}</p>
+                                        <p class="text-[9px] text-zinc-600 mt-0.5">Майстер: ${h.staff?.name || '---'} • ₴${h.price}</p>
+                                    </div>
+                                </div>
+                                <button onclick="window.repeatBooking('${h.service_id}', '${h.master_id}')" class="px-3 py-1.5 border border-white/5 rounded-lg text-[8px] font-black uppercase text-zinc-500 hover:text-white transition">Повторити</button>
+                            </div>
+                            <div class="mt-4 pt-4 border-t border-white/5">
+                                ${review ? `
+                                    <div class="flex items-center gap-2 text-[8px] font-black text-emerald-500 uppercase tracking-widest">
+                                        <i class="fa-solid fa-check-circle"></i> Оцінено: ${'★'.repeat(review.rating)} "${truncate(review.comment, 20)}"
+                                    </div>
+                                ` : `
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex gap-1 stars-row" onmouseleave="window.resetStars(this)">
+                                            ${[1, 2, 3, 4, 5].map(s => `<i class="fa-solid fa-star text-zinc-800 text-[10px] cursor-pointer" onmouseenter="window.hoverStars(this, ${s})" onclick="window.showReviewInput(this, ${s}, '${h.id}')"></i>`).join('')}
+                                        </div>
+                                    </div>
+                                    <div class="review-input-block hidden mt-3">
+                                        <div class="quick-replies hidden flex flex-wrap gap-1.5 mb-3">
+                                            <button onclick="window.setQuickText(this, 'Все чудово!')" class="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[8px] font-bold text-zinc-400">Все чудово!</button>
+                                            <button onclick="window.setQuickText(this, 'Дуже задоволена')" class="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[8px] font-bold text-zinc-400">Дуже задоволена</button>
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <input type="text" maxlength="100" placeholder="Ваш коментар..." class="input-dark flex-1 !py-1.5 !text-[10px]">
+                                            <button onclick="window.submitReview(this, '${h.id}', '${h.master_id}')" class="bg-emerald-500 px-3 rounded-lg text-[9px] font-black text-white uppercase">OK</button>
+                                        </div>
+                                    </div>
+                                `}
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>
             </div>
         </div>
-
-        <!-- Решта твого коду профілю (записи, історія) тут... -->
     `;
 }
+
+// --- СЕКЦІЯ 2: ЗАПИС ---
+function renderBookingSection() {
+    const container = document.getElementById('page-booking');
+    container.innerHTML = `
+        <div class="space-y-6 animate-fade-in">
+            <h2 class="text-2xl font-black text-white uppercase tracking-tighter mb-8">Бронювання</h2>
+            
+            <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                ${['all', 'Hair', 'Nail', 'Makeup'].map(cat => `<button onclick="window.filterByCategory('${cat}', this)" class="category-btn ${cat === 'all' ? 'active' : ''} px-4 py-2 rounded-xl border border-white/5 bg-white/2 text-[9px] font-black uppercase tracking-widest transition shrink-0">${cat === 'all' ? 'Всі' : cat}</button>`).join('')}
+            </div>
+
+            <div class="glass-panel p-5 rounded-[2rem] relative z-dropdown">
+                <h4 class="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-4">1. Послуга</h4>
+                <div class="relative">
+                    <div onclick="window.toggleServiceDropdown()" class="input-dark w-full flex justify-between items-center cursor-pointer">
+                        <span id="selectedServiceText" class="text-zinc-400 text-xs">Оберіть процедуру...</span>
+                        <i class="fa-solid fa-chevron-down text-[10px] text-zinc-600" id="dropdownArrow"></i>
+                    </div>
+                    <div id="serviceDropdownList" class="service-dropdown-list glass-panel absolute w-full mt-2 rounded-2xl border border-white/10 bg-[#0a0a0b] shadow-2xl">
+                        <div id="servicesItemsContainer" class="p-2 space-y-1"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mastersSection" class="glass-panel p-5 rounded-[2rem] opacity-30 pointer-events-none transition-all duration-500">
+                <h4 class="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-4">2. Майстер</h4>
+                <div class="grid grid-cols-2 gap-3" id="mastersGrid"></div>
+            </div>
+
+            <div id="calendarSection" class="glass-panel p-5 rounded-[2rem] opacity-30 pointer-events-none transition-all duration-500">
+                <h4 class="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-4">3. Дата та час</h4>
+                <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-center text-[10px]"></div>
+                <div id="timeSlots" class="grid grid-cols-3 gap-2 mt-6"></div>
+            </div>
+
+            <div class="glass-panel p-6 rounded-[2.5rem] border-t-4 border-t-rose-500 shadow-2xl">
+                <div class="space-y-3 mb-6">
+                    <div class="flex justify-between text-[10px] font-bold"><span class="text-zinc-500 uppercase">Послуга</span><span id="sumService" class="text-white">---</span></div>
+                    <div class="flex justify-between text-[10px] font-bold"><span class="text-zinc-500 uppercase">Майстер</span><span id="sumMaster" class="text-white">---</span></div>
+                    <div class="flex justify-between text-[10px] font-bold"><span class="text-zinc-500 uppercase">Дата</span><span id="sumDate" class="text-white">---</span></div>
+                    <div class="h-px bg-white/5 my-2"></div>
+                    <div class="flex justify-between items-center"><span class="text-xs font-black text-white uppercase">Сума</span><span id="sumPrice" class="text-xl font-black text-emerald-400">₴0</span></div>
+                </div>
+                <button onclick="window.confirmBooking()" class="neo-gradient w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-white">Записатись</button>
+            </div>
+        </div>
+    `;
+    window.renderServicesList('all');
+}
+
+// --- СЕКЦІЯ 3: БОНУСИ ---
+function renderBonusesSection(client, programs, bonusHistory, visitHistory) {
+    const container = document.getElementById('page-bonuses');
+    const balance = client?.bonuses || 0;
+    const earned = bonusHistory.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+    const spent = Math.abs(bonusHistory.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0));
+
+    container.innerHTML = `
+        <div class="space-y-8 animate-fade-in">
+            <h2 class="text-3xl font-black text-white uppercase tracking-tighter leading-none mt-4">Бонусна<br>програма</h2>
+            
+            <div class="glass-panel p-8 rounded-[2rem] border-t-2 border-t-rose-500 relative overflow-hidden shadow-2xl">
+                <div class="absolute -right-10 -top-10 w-32 h-32 bg-rose-500/10 rounded-full blur-3xl animate-flicker-blur"></div>
+                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-1">Мій баланс</p>
+                <h3 class="text-5xl font-black text-white tracking-tighter">${balance.toLocaleString()}</h3>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="glass-panel p-4 rounded-2xl border-t border-emerald-500/30">
+                    <p class="text-[8px] text-zinc-500 uppercase font-bold mb-1">Нараховано</p>
+                    <p class="text-lg font-black text-white">₴${earned}</p>
+                </div>
+                <div class="glass-panel p-4 rounded-2xl border-t border-white/10">
+                    <p class="text-[8px] text-zinc-500 uppercase font-bold mb-1">Витрачено</p>
+                    <p class="text-lg font-black text-zinc-500">₴${spent}</p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-2">Привілеї</h4>
+                ${programs.map(p => {
+                    const alreadyGot = bonusHistory.some(t => t.reason.toUpperCase() === p.name.toUpperCase());
+                    const status = alreadyGot ? { t: 'Нараховано', c: 'text-blue-400 bg-blue-400/10' } : { t: 'Активний', c: 'text-emerald-500 bg-emerald-500/10' };
+                    return `
+                    <div class="glass-panel p-5 rounded-[2rem] border border-white/5">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="px-2 py-1 rounded text-[7px] font-black uppercase tracking-widest ${status.c}">${status.t}</span>
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-[10px]"></i>
+                        </div>
+                        <p class="text-xs font-black text-white uppercase mb-1">${p.name}</p>
+                        <p class="text-[10px] text-zinc-500 leading-relaxed">${p.description}</p>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>
+    `;
+}
+
+// 6. BOOKING LOGIC FUNCTIONS
+window.filterByCategory = function(category, btn) {
+    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    window.renderServicesList(category);
+    if (!document.getElementById('serviceDropdownList').classList.contains('open')) window.toggleServiceDropdown();
+};
+
+window.renderServicesList = function(category) {
+    const container = document.getElementById('servicesItemsContainer');
+    const services = category === 'all' ? window.allServicesData : window.allServicesData.filter(s => s.category === category);
+    container.innerHTML = services.map(s => `<div onclick="window.selectServiceUI('${s.id}', '${s.name}', ${s.price})" class="p-3 rounded-xl hover:bg-white/5 cursor-pointer flex justify-between items-center group"><span class="text-xs font-bold text-zinc-300 group-hover:text-white transition">${s.name}</span><span class="text-[10px] font-black text-zinc-500">₴${s.price}</span></div>`).join('');
+};
+
+window.toggleServiceDropdown = () => {
+    document.getElementById('serviceDropdownList').classList.toggle('open');
+    document.getElementById('dropdownArrow').classList.toggle('rotate-180');
+};
+
+window.selectServiceUI = async function(id, name, price, preMasterId = null) {
+    document.getElementById('selectedServiceText').innerText = name;
+    document.getElementById('selectedServiceText').classList.add('text-white', 'font-extrabold');
+    window.selectedServiceId = id;
+    window.selectedServiceName = name;
+    window.selectedServicePrice = price;
+    document.getElementById('sumService').innerText = name;
+    document.getElementById('sumPrice').innerText = "₴" + price;
+    window.toggleServiceDropdown();
+    
+    // Активуємо майстрів
+    const mSection = document.getElementById('mastersSection');
+    const mGrid = document.getElementById('mastersGrid');
+    mSection.classList.remove('opacity-30', 'pointer-events-none');
+    mGrid.innerHTML = `<p class="col-span-full text-center animate-pulse text-[10px] text-rose-500 font-bold py-4 uppercase">Шукаємо фахівців...</p>`;
+
+    const { data: masters } = await window.db.from('staff_services').select('staff(*)').eq('service_id', id);
+    mGrid.innerHTML = masters.map(m => `<div id="master-card-${m.staff.id}" onclick="window.loadMasterAvailability(this, '${m.staff.id}', '${m.staff.name}')" class="master-selector border border-white/5 p-4 rounded-2xl bg-white/2 text-center group transition cursor-pointer"><img src="https://ui-avatars.com/api/?name=${m.staff.name.replace(' ','+')}&background=111113&color=fff" class="w-10 h-10 rounded-full mx-auto mb-2 border border-white/10"><p class="text-[11px] font-bold text-white leading-none">${m.staff.name}</p><p class="text-[7px] text-zinc-600 uppercase mt-2">${m.staff.role || 'Майстер'}</p></div>`).join('');
+
+    if (preMasterId) setTimeout(() => document.getElementById(`master-card-${preMasterId}`)?.click(), 150);
+};
+
+window.loadMasterAvailability = async function(el, masterId, name) {
+    document.querySelectorAll('.master-selector').forEach(i => i.classList.remove('border-rose-500', 'bg-rose-500/10'));
+    el.classList.add('border-rose-500', 'bg-rose-500/10');
+    window.selectedMasterId = masterId;
+    document.getElementById('sumMaster').innerText = name;
+    document.getElementById('calendarSection').classList.remove('opacity-30', 'pointer-events-none');
+
+    const { data: shifts } = await window.db.from('staff_shifts').select('shift_date').eq('staff_id', masterId);
+    renderCalendar(shifts?.map(s => s.shift_date) || []);
+};
+
+function renderCalendar(availableDates) {
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = '';
+    ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'].forEach(d => grid.innerHTML += `<div class="text-[8px] font-black text-zinc-700 uppercase mb-2">${d}</div>`);
+
+    const today = new Date();
+    for (let i = 0; i < 14; i++) {
+        const date = new Date();
+        date.setDate(today.getDate() + i);
+        const dateStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+        const isAv = availableDates.includes(dateStr);
+        grid.innerHTML += `<button onclick="${isAv ? `window.selectDate(this, '${dateStr}')` : ''}" class="calendar-day p-3 rounded-xl text-[10px] font-bold border border-white/5 transition ${isAv ? 'bg-white/5 text-white' : 'opacity-10'}">${date.getDate()}</button>`;
+    }
+}
+
+window.selectDate = async function(el, date) {
+    document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('bg-rose-500', 'text-white'));
+    el.classList.add('bg-rose-500', 'text-white');
+    window.selectedDateValue = date;
+    const tGrid = document.getElementById('timeSlots');
+    tGrid.innerHTML = `<p class="col-span-3 text-[9px] animate-pulse text-zinc-500 uppercase font-black text-center py-4">Перевірка часу...</p>`;
+
+    const [shift, booked] = await Promise.all([
+        window.db.from('staff_shifts').select('start_time, end_time').eq('staff_id', window.selectedMasterId).eq('shift_date', date).single(),
+        window.db.from('appointments').select('appointment_time').eq('master_id', window.selectedMasterId).eq('appointment_date', date).neq('status', 'rejected')
+    ]);
+
+    if (!shift.data) { tGrid.innerHTML = `<p class="col-span-3 text-[9px] text-rose-500 font-bold uppercase text-center">Вихідний</p>`; return; }
+
+    const start = parseInt(shift.data.start_time), end = parseInt(shift.data.end_time);
+    const bt = booked.data.map(b => b.appointment_time.substring(0,5));
+    tGrid.innerHTML = '';
+    for (let h = start; h < end; h++) {
+        const time = `${h}:00`.padStart(5,'0');
+        const isB = bt.includes(time);
+        tGrid.innerHTML += `<button onclick="${isB ? '' : `window.selectTime(this)`}" class="p-2 rounded-lg border border-white/5 text-[9px] font-black ${isB ? 'opacity-10 bg-zinc-900' : 'bg-white/5 hover:border-rose-500'}">${time}</button>`;
+    }
+    window.updateSummary();
+};
+
+window.selectTime = function(el) {
+    document.querySelectorAll('.time-btn').forEach(i => i.classList.remove('bg-rose-500'));
+    el.classList.add('bg-rose-500');
+    window.selectedTimeValue = el.innerText.trim();
+    window.updateSummary();
+};
+
+window.updateSummary = function() {
+    document.getElementById('sumDate').innerText = window.selectedDateValue ? `${window.selectedDateValue.split('-')[2]}.${window.selectedDateValue.split('-')[1]} ${window.selectedTimeValue || ''}` : '---';
+};
+
+window.confirmBooking = async function() {
+    if (!window.selectedServiceId || !window.selectedMasterId || !window.selectedDateValue || !window.selectedTimeValue) return alert("Заповніть всі кроки");
+    const { error } = await window.db.from('appointments').insert([{ client_id: userId, master_id: window.selectedMasterId, service_id: window.selectedServiceId, service_name: window.selectedServiceName, appointment_date: window.selectedDateValue, appointment_time: window.selectedTimeValue, price: window.selectedServicePrice, status: 'waiting' }]);
+    if (!error) { alert("Успішно записано!"); window.location.reload(); }
+};
+
+window.repeatBooking = (sid, mid) => { window.scrollToPage(1); window.selectServiceUI(sid, 'Завантаження...', 0, mid); };
+
+// 7. REVIEW SYSTEM FUNCTIONS
+window.hoverStars = (el, r) => { const row = el.closest('.stars-row'); row.querySelectorAll('.fa-star').forEach((s, i) => s.classList.toggle('text-amber-500', i < r)); };
+window.resetStars = (row) => { const inp = row.closest('.review-container').querySelector('.review-input-block'); if (inp.classList.contains('hidden')) row.querySelectorAll('.fa-star').forEach(s => s.classList.remove('text-amber-500')); };
+window.showReviewInput = (el, r, id) => { const parent = el.closest('.review-container'); const ib = parent.querySelector('.review-input-block'); const qr = parent.querySelector('.quick-replies'); ib.classList.remove('hidden'); ib.dataset.rating = r; if (r >= 4) qr.classList.remove('hidden'); else qr.classList.add('hidden'); };
+window.setQuickText = (btn, t) => { btn.closest('.review-input-block').querySelector('input').value = t; };
+window.submitReview = async (btn, aid, mid) => {
+    const parent = btn.closest('.review-container');
+    const r = parent.querySelector('.review-input-block').dataset.rating;
+    const comm = parent.querySelector('input').value;
+    const { error } = await window.db.from('reviews').insert([{ client_id: userId, appointment_id: aid, master_id: mid, rating: parseInt(r), comment: comm }]);
+    if (!error) { parent.innerHTML = `<div class="p-4 text-center text-[9px] text-emerald-500 font-black uppercase tracking-widest">Дякуємо за відгук!</div>`; setTimeout(() => window.renderProfilePage(), 2000); }
+};
+
+window.cancelAppointment = async (aid, cid) => {
+    if (!confirm("Скасувати?")) return;
+    const { data } = await window.db.from('clients').select('cancelled_appointments').eq('id', cid).single();
+    await window.db.from('appointments').delete().eq('id', aid);
+    await window.db.from('clients').update({ cancelled_appointments: (data.cancelled_appointments || 0) + 1 }).eq('id', cid);
+    window.renderProfilePage();
+};
