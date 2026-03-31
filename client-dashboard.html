@@ -80,6 +80,20 @@
     margin-bottom: 1rem !important;
 }
 .loyalty-card-mobile h3 { font-size: 1.25rem !important; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Стиль активної кнопки як на твоєму скріншоті */
+        .nav-active {
+            background: rgba(244, 63, 94, 0.1) !important;
+            color: #f43f5e !important;
+        }
+        .nav-inactive {
+            color: #52525b;
+        }
+        
+        /* Щоб контент не стрибав */
+        section { scroll-snap-align: center; }
     </style>
 </head>
 <body class="flex min-h-screen">
@@ -112,25 +126,44 @@
     </nav>
 </aside>
 
-<!-- MAIN CONTAINER: Горизонтальний скрол -->
-<main id="main-scroller" class="flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar h-screen ml-0 lg:ml-64">
-    
-    <!-- SECTION 1: ПРОФІЛЬ -->
-    <section id="section-profile" class="w-full lg:w-full shrink-0 snap-center p-5 lg:p-10 pb-32 overflow-y-auto h-full">
-        <!-- Вміст профілю завантажиться через JS -->
-    </section>
+ <!-- ОСНОВНИЙ КОНТЕЙНЕР ДЛЯ ГОРТАННЯ -->
+    <main id="main-scroller" class="flex-1 flex overflow-x-auto snap-x snap-mandatory no-scrollbar scroll-smooth">
+        
+        <!-- СТОРІНКА 1: ПРОФІЛЬ -->
+        <section class="w-screen flex-shrink-0 snap-center p-6 pb-24 overflow-y-auto" id="page-profile">
+            <!-- Сюди JS вставить вміст профілю -->
+            <p class="text-zinc-500 animate-pulse uppercase font-black text-[10px] tracking-widest text-center mt-20">Завантаження...</p>
+        </section>
 
-    <!-- SECTION 2: ЗАПИС -->
-    <section id="section-booking" class="w-full lg:w-full shrink-0 snap-center p-5 lg:p-10 pb-32 overflow-y-auto h-full">
-        <!-- Вміст бронювання завантажиться через JS -->
-    </section>
+        <!-- СТОРІНКА 2: ЗАПИС -->
+        <section class="w-screen flex-shrink-0 snap-center p-6 pb-24 overflow-y-auto" id="page-booking">
+            <!-- Сюди JS вставить форму запису -->
+        </section>
 
-    <!-- SECTION 3: БОНУСИ -->
-    <section id="section-bonuses" class="w-full lg:w-full shrink-0 snap-center p-5 lg:p-10 pb-32 overflow-y-auto h-full">
-        <!-- Вміст бонусів завантажиться через JS -->
-    </section>
+        <!-- СТОРІНКА 3: БОНУСИ -->
+        <section class="w-screen flex-shrink-0 snap-center p-6 pb-24 overflow-y-auto" id="page-bonuses">
+            <!-- Сюди JS вставить вміст бонусів -->
+        </section>
 
-</main>
+    </main>
+
+    <!-- НИЖНЄ МЕНЮ (TAB BAR) -->
+    <nav class="fixed bottom-4 left-4 right-4 h-16 glass-panel rounded-2xl flex items-center justify-around z-[100] border border-white/5 shadow-2xl">
+        <button onclick="window.scrollToPage(0)" id="btn-profile" class="flex flex-col items-center gap-1 w-20 py-2 rounded-xl transition-all duration-300">
+            <i class="fa-solid fa-circle-user text-lg"></i>
+            <span class="text-[9px] font-black uppercase tracking-widest">Профіль</span>
+        </button>
+        
+        <button onclick="window.scrollToPage(1)" id="btn-booking" class="flex flex-col items-center gap-1 w-20 py-2 rounded-xl transition-all duration-300">
+            <i class="fa-solid fa-calendar-plus text-lg"></i>
+            <span class="text-[9px] font-black uppercase tracking-widest">Запис</span>
+        </button>
+
+        <button onclick="window.scrollToPage(2)" id="btn-bonuses" class="flex flex-col items-center gap-1 w-20 py-2 rounded-xl transition-all duration-300">
+            <i class="fa-solid fa-gift text-lg"></i>
+            <span class="text-[9px] font-black uppercase tracking-widest">Бонуси</span>
+        </button>
+    </nav>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-init.js"></script>
     <script src="js/client-dashboard.js"></script>
