@@ -114,47 +114,54 @@
 }
     </style>
 </head>
-<body class="flex min-h-screen bg-[#050505] text-[#e2e8f0]">
+<body class="flex flex-col h-screen bg-[#050505] text-[#e2e8f0] overflow-hidden">
 
-  <!-- SIDEBAR: ПК - збоку, МОБІЛКА - плаваючий Tab Bar знизу -->
-<aside class="fixed bottom-6 left-4 right-4 lg:top-0 lg:left-0 lg:right-auto z-[100] w-auto lg:w-64 h-16 lg:h-full glass-panel rounded-2xl lg:rounded-none bg-black/60 lg:bg-black/40 backdrop-blur-2xl border border-white/5 lg:border-r lg:border-t-0 flex flex-row lg:flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500">
-    
-    <!-- Логотип (тільки для ПК) -->
-    <div class="hidden lg:flex p-8 flex-col">
-        <h1 class="text-xl font-extrabold text-white tracking-tighter uppercase leading-none">Wella Glow</h1>
-        <p class="text-[9px] text-rose-500 font-bold tracking-[0.4em] uppercase mt-1">studio</p>
-    </div>
+    <!-- НАВІГАЦІЯ (Sidebar/Tabbar) -->
+    <aside class="fixed bottom-6 left-4 right-4 lg:top-0 lg:left-0 lg:right-auto z-[100] w-auto lg:w-64 h-16 lg:h-full glass-panel rounded-2xl lg:rounded-none bg-black/60 lg:bg-black/40 backdrop-blur-2xl border border-white/5 lg:border-r lg:border-t-0 flex flex-row lg:flex-col shadow-2xl transition-all duration-500">
+        <div class="hidden lg:flex p-6 flex-col">
+            <h1 class="text-lg font-extrabold text-white tracking-tighter uppercase leading-none">Wella Glow</h1>
+            <p class="text-[8px] text-rose-500 font-bold tracking-[0.4em] mt-1">studio</p>
+        </div>
 
-    <!-- Кнопки навігації -->
-    <nav class="flex flex-row lg:flex-col flex-1 px-2 lg:px-4 items-center lg:items-stretch justify-around lg:justify-start lg:space-y-3">
+        <nav class="flex flex-row lg:flex-col flex-1 px-2 lg:px-4 items-center lg:items-stretch justify-around lg:justify-start lg:space-y-3">
+            <button id="nav-profile" onclick="window.scrollToPage(0)" class="flex-1 lg:flex-none flex flex-col lg:flex-row items-center gap-1 lg:gap-4 p-2 lg:p-4 rounded-xl lg:rounded-2xl transition-all duration-300 text-zinc-500">
+                <i class="fa-solid fa-circle-user text-lg lg:text-sm"></i> 
+                <span class="text-[9px] lg:text-xs uppercase font-black tracking-widest">Профіль</span>
+            </button>
+            <button id="nav-booking" onclick="window.scrollToPage(1)" class="flex-1 lg:flex-none flex flex-col lg:flex-row items-center gap-1 lg:gap-4 p-2 lg:p-4 rounded-xl lg:rounded-2xl transition-all duration-300 text-zinc-500">
+                <i class="fa-solid fa-calendar-plus text-lg lg:text-sm"></i> 
+                <span class="text-[9px] lg:text-xs uppercase font-black tracking-widest">Запис</span>
+            </button>
+            <button id="nav-bonuses" onclick="window.scrollToPage(2)" class="flex-1 lg:flex-none flex flex-col lg:flex-row items-center gap-1 lg:gap-4 p-2 lg:p-4 rounded-xl lg:rounded-2xl transition-all duration-300 text-zinc-500">
+                <i class="fa-solid fa-gift text-lg lg:text-sm"></i> 
+                <span class="text-[9px] lg:text-xs uppercase font-black tracking-widest">Бонуси</span>
+            </button>
+        </nav>
+    </aside>
+
+    <!-- ГОЛОВНИЙ СКРОЛЕР (Для свайпів) -->
+    <main id="main-scroller" class="flex-1 flex overflow-x-auto snap-x snap-mandatory no-scrollbar scroll-smooth ml-0 lg:ml-64">
         
-        <button id="nav-profile" onclick="window.renderProfilePage()" class="flex-1 lg:flex-none flex flex-col lg:flex-row items-center gap-1 lg:gap-4 p-2 lg:p-4 rounded-xl lg:rounded-2xl transition-all duration-300 text-zinc-500">
-            <i class="fa-solid fa-circle-user text-lg lg:text-sm"></i> 
-            <span class="text-[9px] lg:text-xs uppercase font-black tracking-widest">Профіль</span>
-        </button>
+        <!-- Секція 1: ПРОФІЛЬ -->
+        <section id="page-profile" class="w-screen lg:w-[calc(100vw-16rem)] flex-shrink-0 snap-center p-5 lg:p-10 pb-32 overflow-y-auto h-full">
+            <p class="text-zinc-600 animate-pulse text-center mt-20 uppercase font-black text-[10px]">Завантаження профілю...</p>
+        </section>
 
-        <button id="nav-booking" onclick="window.renderBookingPage()" class="flex-1 lg:flex-none flex flex-col lg:flex-row items-center gap-1 lg:gap-4 p-2 lg:p-4 rounded-xl lg:rounded-2xl transition-all duration-300 text-zinc-500">
-            <i class="fa-solid fa-calendar-plus text-lg lg:text-sm"></i> 
-            <span class="text-[9px] lg:text-xs uppercase font-black tracking-widest">Запис</span>
-        </button>
+        <!-- Секція 2: ЗАПИС -->
+        <section id="page-booking" class="w-screen lg:w-[calc(100vw-16rem)] flex-shrink-0 snap-center p-5 lg:p-10 pb-32 overflow-y-auto h-full">
+        </section>
 
-        <button id="nav-bonuses" onclick="window.renderBonusPage()" class="flex-1 lg:flex-none flex flex-col lg:flex-row items-center gap-1 lg:gap-4 p-2 lg:p-4 rounded-xl lg:rounded-2xl transition-all duration-300 text-zinc-500">
-            <i class="fa-solid fa-gift text-lg lg:text-sm"></i> 
-            <span class="text-[9px] lg:text-xs uppercase font-black tracking-widest">Бонуси</span>
-        </button>
+        <!-- Секція 3: БОНУСИ -->
+        <section id="page-bonuses" class="w-screen lg:w-[calc(100vw-16rem)] flex-shrink-0 snap-center p-5 lg:p-10 pb-32 overflow-y-auto h-full">
+        </section>
 
-        <!-- Вихід (тільки іконка на мобільних) -->
-        <button onclick="logout()" class="flex-1 lg:flex-none flex flex-col lg:flex-row items-center gap-1 lg:gap-4 p-2 lg:p-4 rounded-xl lg:mt-auto lg:mb-4 text-zinc-700 hover:text-rose-500 transition">
-            <i class="fa-solid fa-right-from-bracket text-lg lg:text-sm"></i>
-            <span class="text-[9px] lg:text-xs uppercase font-black tracking-widest hidden lg:block">Вийти</span>
-        </button>
-    </nav>
-</aside>
-
-    <!-- ГОЛОВНИЙ КОНТЕНТ -->
-    <main class="flex-1 ml-0 lg:ml-64 p-5 lg:p-10 pb-24 lg:pb-10">
-        <!-- Сюди JS вставляє контент -->
     </main>
+
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        @media (min-width: 1024px) { #main-scroller { overflow-x: hidden; } } /* Вимикаємо свайп на ПК */
+    </style>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-init.js"></script>
