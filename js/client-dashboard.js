@@ -142,7 +142,7 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-window.renderProfilePage = async function() {
+window.renderProfileSection = async function() {
     window.updateSidebar('profile');
     const main = document.querySelector('main');
     const userId = localStorage.getItem('wella_glow_user_id');
@@ -312,7 +312,7 @@ function logout() {
     window.location.href = 'login.html';
 }
 // --- 1. ПЕРЕРОБЛЕНА ФУНКЦІЯ ЗАПИСУ (З ПІДТРИМКОЮ ПОВТОРУ) ---
-window.renderBookingPage = async function(preServiceId = null, preMasterId = null) {
+window.renderBookingSection = async function(preServiceId = null, preMasterId = null) {
     window.updateSidebar('booking');
     const main = document.querySelector('main');
     
@@ -809,7 +809,7 @@ window.setQuickText = function(btn, text) {
     const input = parent.querySelector('input');
     input.value = text;
 };
-window.renderBonusPage = async function() {
+window.renderBonusesSection = async function() {
     window.updateSidebar('bonuses');
     const main = document.querySelector('main');
     const userId = localStorage.getItem('wella_glow_user_id');
