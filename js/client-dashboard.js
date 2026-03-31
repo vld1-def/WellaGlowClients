@@ -128,6 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 function renderProfileSection(client, history, reviews, upcoming) {
     const container = document.getElementById('page-profile');
     const firstName = client.full_name.split(' ')[0];
+    const actualBalance = bonusHistory.reduce((sum, t) => sum + t.amount, 0);
     let tier = { name: 'SILVER', color: 'zinc-400', icon: 'fa-medal' };
     if (client.ltv >= 5000) tier = { name: 'GOLD', color: 'amber-500', icon: 'fa-crown' };
     if (client.ltv >= 15000) tier = { name: 'PLATINUM', color: 'cyan-400', icon: 'fa-gem' };
@@ -143,7 +144,7 @@ function renderProfileSection(client, history, reviews, upcoming) {
                     <i class="fa-solid ${tier.icon} text-${tier.color} text-xl shadow-lg"></i>
                 </div>
                 <div class="flex justify-between items-end">
-                    <p class="text-3xl lg:text-4xl font-black text-white leading-none">${client.bonuses} <span class="text-xs font-bold text-zinc-600 ml-1">балів</span></p>
+                    <p class="text-3xl lg:text-4xl font-black text-white leading-none">${actualBalance.toLocaleString()}<span class="text-xs font-bold text-zinc-600 ml-1">балів</span></p>
                     <div class="w-10 h-10 lg:w-14 lg:h-14 bg-white/5 rounded-xl lg:rounded-2xl flex items-center justify-center border border-white/5"><i class="fa-solid fa-qrcode text-zinc-400 text-xs lg:text-base"></i></div>
                 </div>
             </div>
@@ -232,6 +233,11 @@ function renderBonusesSection(client, programs, bonusHistory, visitHistory) {
     const container = document.getElementById('page-bonuses');
     const balance = client?.bonuses || 0;
     const countVisits = (cat) => visitHistory.filter(v => v.services?.category === cat).length;
+
+    const balance = bonusHistory.reduce((sum, t) => sum + t.amount, 0);
+
+    const earned = bonusHistory.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+    const spent = Math.abs(bonusHistory.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0));
     
     const activeProgs = [], lockedProgs = [];
     programs.forEach(p => {
