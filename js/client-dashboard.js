@@ -439,7 +439,14 @@ function renderBookingSection() {
 function renderBonusesSection(client, programs, bonusHistory, visitHistory) {
     const container = document.getElementById('page-bonuses');
     const balance = client?.bonuses || 0;
-
+    const activeProgs = [], lockedProgs = [];
+    programs.forEach(p => {
+        const count = countVisits(p.service_category);
+        const isLocked = count < p.required_visits;
+        const alreadyGot = bonusHistory.some(t => t.reason.trim().toLowerCase() === p.name.trim().toLowerCase());
+        if (isLocked && !(p.program_type === 'once' && alreadyGot)) lockedProgs.push({...p, count});
+        else activeProgs.push({...p, count, alreadyGot});
+    });
     // Допоміжна функція підрахунку візитів
     const countVisits = (category) => {
         if (!category) return visitHistory.length;
