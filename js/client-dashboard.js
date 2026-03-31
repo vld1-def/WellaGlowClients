@@ -60,18 +60,26 @@ window.logout = function() {
 window.scrollToPage = function(index) {
     const scroller = document.getElementById('main-scroller');
     if (scroller) {
-        scroller.scrollTo({ left: window.innerWidth * index, behavior: 'smooth' });
-        window.updateNav(index);
+        scroller.scrollTo({ 
+            left: window.innerWidth * index, 
+            behavior: 'smooth' 
+        });
     }
 };
 
 window.updateNav = function(index) {
     const ids = ['btn-profile', 'btn-booking', 'btn-bonuses'];
+    
     ids.forEach((id, i) => {
         const btn = document.getElementById(id);
         if (btn) {
-            btn.classList.toggle('nav-active', i === index);
-            btn.classList.toggle('nav-inactive', i !== index);
+            if (i === index) {
+                btn.classList.add('nav-active');
+                btn.classList.remove('nav-inactive');
+            } else {
+                btn.classList.remove('nav-active');
+                btn.classList.add('nav-inactive');
+            }
         }
     });
 };
@@ -106,6 +114,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (err) {
         console.error("Критична помилка завантаження:", err);
     }
+     const scroller = document.getElementById('main-scroller');
+    
+    // СЛУХАЧ СВАЙПІВ
+    scroller.addEventListener('scroll', () => {
+        // Вираховуємо індекс сторінки (від 0 до 2)
+        // scrollLeft — на скільки прокручено, innerWidth — ширина екрана
+        const index = Math.round(scroller.scrollLeft / window.innerWidth);
+        
+        // Викликаємо оновлення навігації
+        window.updateNav(index);
+    });
+
+    // Початкова підсвітка першої кнопки
+    window.updateNav(0);
 });
 
 function renderProfileSection(client, history, reviews, upcoming) {
@@ -117,12 +139,11 @@ function renderProfileSection(client, history, reviews, upcoming) {
     else if (client.ltv >= 5000) tier = { name: 'GOLD', color: 'amber-500', icon: 'fa-crown' };
 
     container.innerHTML = `
-        <div class="space-y-8 animate-fade-in">
-            <header class="flex justify-between items-center">
-                <div>
-                    <h2 class="text-2xl font-extrabold text-white tracking-tight italic-none">Вітаємо, ${firstName}! ✨</h2>
-                    <p class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest mt-2 leading-none italic-none">Твій день для краси сьогодні</p>
-                </div>
+         <div class="animate-fade-in">
+            <div class="section-header-container">
+                <h2 class="text-2xl font-extrabold text-white tracking-tight leading-none italic-none">Вітаємо, ${firstName}! ✨</h2>
+                <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2">Твій день для краси сьогодні</p>
+            </div>
                 <button onclick="logout()" class="text-zinc-700 hover:text-rose-500 transition"><i class="fa-solid fa-power-off"></i></button>
             </header>
 
@@ -235,7 +256,7 @@ function renderBookingSection() {
     const container = document.getElementById('page-booking');
     container.innerHTML = `
         <div class="space-y-6 animate-fade-in">
-            <h2 class="text-2xl font-black text-white uppercase tracking-tighter mb-8">Бронювання</h2>
+            <h2 class="text-2xl font-black text-white uppercase tracking-tighter mb-8">Запис на візит</h2>
             
             <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
                 ${['all', 'Hair', 'Nail', 'Makeup'].map(cat => `<button onclick="window.filterByCategory('${cat}', this)" class="category-btn ${cat === 'all' ? 'active' : ''} px-4 py-2 rounded-xl border border-white/5 bg-white/2 text-[9px] font-black uppercase tracking-widest transition shrink-0">${cat === 'all' ? 'Всі' : cat}</button>`).join('')}
@@ -291,11 +312,10 @@ function renderBonusesSection(client, programs, bonusHistory, visitHistory) {
     };
 
     container.innerHTML = `
-        <div class="space-y-8 animate-fade-in">
-            <!-- Заголовок -->
-            <div class="mt-4">
-                <h2 class="text-xl font-extrabold text-white uppercase tracking-tighter leading-none italic-none">Бонусна програма</h2>
-                <p class="text-zinc-500 text-[9px] font-bold uppercase tracking-widest mt-2 leading-none italic-none">Твої накопичення та привілеї</p>
+       <div class="animate-fade-in">
+            <div class="section-header-container">
+                <h2 class="text-2xl font-extrabold text-white uppercase tracking-tighter leading-none italic-none">Бонусна програма</h2>
+                <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2">Твої накопичення та привілеї</p>
             </div>
             
             <!-- Баланс -->
