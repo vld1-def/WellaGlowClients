@@ -121,6 +121,16 @@ button, span, i {
         @keyframes toast-in { from { opacity: 0; transform: translateY(-40px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .toast-container { position: fixed; top: calc(20px + var(--sat)); left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 350px; }
         .toast-item { background: rgba(20, 20, 22, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #10b981; padding: 14px; border-radius: 18px; color: white; display: flex; align-items: center; gap: 12px; animation: toast-in 0.5s forwards; }
+    /* Додай це в injectGlowStyles всередину тегу style */
+.z-step-1 { z-index: 50 !important; position: relative !important; }
+.z-step-2 { z-index: 40 !important; position: relative !important; }
+.z-step-3 { z-index: 30 !important; position: relative !important; }
+
+/* Гарантуємо, що список послуг завжди зверху */
+.service-dropdown-list { 
+    z-index: 100 !important; 
+    position: absolute !important;
+}
     `;
     document.head.appendChild(style);
 };
@@ -368,7 +378,7 @@ function renderBookingSection() {
             <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar -mx-5 px-5">
                 ${['all', 'Hair', 'Nail', 'Makeup'].map(cat => `<button onclick="window.filterByCategory('${cat}', this)" class="category-btn ${cat === 'all' ? 'active' : ''} px-5 py-2.5 rounded-xl border border-white/5 bg-white/2 text-[10px] font-black uppercase tracking-widest transition shrink-0">${cat === 'all' ? 'Всі' : cat}</button>`).join('')}
             </div>
-            <div class="glass-panel p-6 rounded-[2rem] relative z-dropdown">
+            <div class="glass-panel p-6 rounded-[2rem] relative z-step-1">
                 <h4 class="text-xs font-black text-rose-500 uppercase tracking-widest mb-6 leading-none">1. Оберіть послугу</h4>
                 <div class="relative">
                     <div onclick="window.toggleServiceDropdown()" id="serviceSelector" class="input-dark w-full flex justify-between items-center cursor-pointer border border-white/10 hover:border-rose-500/50 transition">
@@ -380,11 +390,11 @@ function renderBookingSection() {
                     </div>
                 </div>
             </div>
-            <div id="mastersSection" class="glass-panel p-6 rounded-[2rem] opacity-30 pointer-events-none transition-all duration-500 relative z-40">
+            <div id="mastersSection" class="glass-panel p-6 rounded-[2rem] opacity-30 pointer-events-none transition-all duration-500 relative z-40 z-step-2">
                 <h4 class="text-xs font-black text-rose-500 uppercase tracking-widest mb-6 leading-none">2. Оберіть майстра</h4>
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-4" id="mastersGrid"></div>
             </div>
-            <div id="calendarSection" class="glass-panel p-6 rounded-[2rem] opacity-30 pointer-events-none transition-all duration-500">
+            <div id="calendarSection" class="glass-panel p-6 rounded-[2rem] opacity-30 pointer-events-none transition-all duration-500 z-step-3">
                 <h4 class="text-xs font-black text-rose-500 uppercase tracking-widest mb-6 leading-none">3. Дата та час</h4>
                 <div id="calendarGrid" class="grid grid-cols-7 gap-2 text-center text-[10px]"></div>
                 <div id="timeSlots" class="grid grid-cols-4 gap-2 mt-8"></div>
@@ -586,4 +596,24 @@ window.cancelAppointment = async (aid, cid) => {
     await window.db.from('clients').update({ cancelled_appointments: (cl.cancelled_appointments || 0) + 1 }).eq('id', cid);
     window.location.reload();
 };
-window.repeatBooking = (sid, mid) => { window.scrollToPage(1); setTimeout(() => window.selectServiceUI(sid, 'Завантаження...', 0, mid), 500); };
+window.repeatBooking = (sid, mid) => { 
+    // 1. Переходимо на сторінку запису
+    window.scrollToPage(1); 
+
+    setTimeout(() => {
+        // 2. Шукаємо дані послуги в завантаженому масиві
+        const service = window.allServicesData.find(s => s.id === sid);
+        if (!service) return;
+
+        // 3. Знаходимо потрібну кнопку категорії та клікаємо по ній
+        const categoryBtn = document.querySelector(`.category-btn[onclick*="'${service.category}'"]`);
+        if (categoryBtn) {
+            window.filterByCategory(service.category, categoryBtn);
+        }
+
+        // 4. Обираємо саму послугу (з невеликою затримкою для рендеру списку)
+        setTimeout(() => {
+            window.selectServiceUI(sid, service.name, service.price, mid);
+        }, 100);
+    }, 400); 
+};
