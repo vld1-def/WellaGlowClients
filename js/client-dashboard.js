@@ -418,3 +418,78 @@ document.addEventListener('DOMContentLoaded', () => {
     injectBaseStyles();
     window.renderProfilePage();
 });
+/**
+ * WELLA GLOW CRM - FULL SPA ENGINE WITH SWIPE SUPPORT
+ */
+const userId = localStorage.getItem('wella_glow_user_id');
+if (!userId) window.location.href = 'login.html';
+
+// 1. ЛОГІКА СКРОЛУ ТА НАВІГАЦІЇ
+window.scrollToPage = function(index) {
+    const scroller = document.getElementById('main-scroller');
+    // Обчислюємо ширину однієї секції
+    const width = scroller.querySelector('section').clientWidth;
+    scroller.scrollTo({ left: width * index, behavior: 'smooth' });
+    window.updateSidebarUI(index);
+};
+
+// Підсвітка кнопок
+window.updateSidebarUI = function(index) {
+    const ids = ['nav-profile', 'nav-booking', 'nav-bonuses'];
+    ids.forEach((id, i) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (i === index) {
+            el.classList.add('text-white', 'bg-white/10', 'backdrop-blur-md', 'shadow-lg');
+            el.classList.remove('text-zinc-500');
+            if (window.innerWidth >= 1024) el.classList.add('border-l-4', 'border-rose-500');
+            const icon = el.querySelector('i');
+            if (icon) icon.classList.add('text-rose-500');
+        } else {
+            el.classList.remove('text-white', 'bg-white/10', 'backdrop-blur-md', 'shadow-lg', 'border-l-4', 'border-rose-500');
+            el.classList.add('text-zinc-500');
+            const icon = el.querySelector('i');
+            if (icon) icon.classList.remove('text-rose-500');
+        }
+    });
+};
+
+// 2. ІНІЦІАЛІЗАЦІЯ ПРИ ЗАВАНТАЖЕННІ
+document.addEventListener('DOMContentLoaded', async () => {
+    const scroller = document.getElementById('main-scroller');
+    
+    // СЛУХАЧ СВАЙПІВ: Оновлює меню, коли клієнт гортає пальцем
+    scroller.addEventListener('scroll', () => {
+        const width = scroller.querySelector('section').clientWidth;
+        const index = Math.round(scroller.scrollLeft / width);
+        window.updateSidebarUI(index);
+    });
+
+    // Завантаження всіх даних
+    try {
+        const [clientRes, historyRes, reviewsRes, upcomingAppsRes, servicesRes, mastersRes, bonusProgramsRes] = await Promise.all([
+            window.db.from('clients').select('*').eq('id', userId).single(),
+            window.db.from('appointment_history').select('*, staff(name), services(name)').eq('client_id', userId).order('visit_date', { ascending: false }),
+            window.db.from('reviews').select('*').eq('client_id', userId),
+            window.db.from('appointments').select('*, staff(name)').eq('client_id', userId).neq('status', 'rejected').order('appointment_date', { ascending: true }),
+            window.db.from('services').select('*').order('name'),
+            window.db.from('staff').select('*').eq('is_active', true),
+            window.db.from('bonus_programs').select('*').eq('is_active', true)
+        ]);
+
+        window.allServicesData = servicesRes.data;
+        
+        // Рендеримо всі секції одразу
+        renderProfileSection(clientRes.data, historyRes.data, reviewsRes.data, upcomingAppsRes.data);
+        renderBookingSection(mastersRes.data);
+        renderBonusesSection(clientRes.data, bonusProgramsRes.data, historyRes.data, reviewsRes.data); // Припустимо history тут це бонусні транзакції
+
+        window.updateSidebarUI(0); // Активуємо першу кнопку
+    } catch (e) { console.error(e); }
+});
+
+// Функція обрізки тексту
+const truncate = (text, limit) => text && text.length > limit ? text.substring(0, limit) + "..." : text;
+
+// --- ТУТ ДАЛІ ЙДУТЬ ФУНКЦІЇ РЕНДЕРУ (renderProfileSection, renderBookingSection, renderBonusesSection) ---
+// (Використовуй попередні версії цих функцій, які ми відшліфували)
