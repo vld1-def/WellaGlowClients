@@ -24,25 +24,110 @@ const injectGlowStyles = () => {
     const style = document.createElement('style');
     style.id = 'glow-app-styles';
     style.textContent = `
+        /* 1. ГЛОБАЛЬНЕ СКИДАННЯ КУРСИВУ */
         * { font-style: normal !important; }
+
+        /* 2. СИСТЕМА СПОВІЩЕНЬ (TOASTS) - ЗВЕРХУ ПО ЦЕНТРУ */
+        .toast-container {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 90%;
+            max-width: 350px;
+            pointer-events: none;
+        }
+        .toast-item {
+            background: rgba(20, 20, 22, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 14px 18px;
+            border-radius: 18px;
+            color: white;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            pointer-events: auto;
+            animation: toast-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes toast-in {
+            from { opacity: 0; transform: translateY(-40px) scale(0.9); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .toast-out {
+            animation: toast-out 0.4s forwards;
+        }
+        @keyframes toast-out {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(0.85) translateY(-20px); }
+        }
+
+        /* 3. АНІМАЦІЇ СТАТУСІВ ЗАПИСУ */
         @keyframes status-pulse-emerald { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); } 70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
         @keyframes status-pulse-amber { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6); } 70% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
         @keyframes status-pulse-rose { 0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.6); } 70% { box-shadow: 0 0 0 8px rgba(244, 63, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); } }
-        @keyframes pulse-blur { 0%, 100% { opacity: 0.1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(1.1); } }
         
         .pulse-confirmed { animation: status-pulse-emerald 2s infinite; }
         .pulse-pending { animation: status-pulse-amber 2s infinite; }
         .pulse-rejected { animation: status-pulse-rose 2s infinite; }
+
+        /* 4. БЛИМАННЯ БЛЮРУ В БОНУСАХ */
+        @keyframes pulse-blur { 
+            0%, 100% { opacity: 0.1; transform: scale(1); } 
+            50% { opacity: 0.3; transform: scale(1.1); } 
+        }
         .animate-flicker-blur { animation: pulse-blur 4s ease-in-out infinite; }
 
-        .service-dropdown-list { max-height: 0; opacity: 0; overflow: hidden; transition: all 0.3s ease; pointer-events: none; }
-        .service-dropdown-list.open { max-height: 350px; opacity: 1; pointer-events: auto; overflow-y: auto; }
+        /* 5. КАСТОМНИЙ DROPDOWN ПОСЛУГ */
+        .service-dropdown-list { 
+            max-height: 0; 
+            opacity: 0; 
+            overflow: hidden; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            pointer-events: none; 
+        }
+        .service-dropdown-list.open { 
+            max-height: 350px; 
+            opacity: 1; 
+            pointer-events: auto; 
+            overflow-y: auto; 
+        }
         .z-dropdown { z-index: 100 !important; }
-        .category-btn.active { background: rgba(244, 63, 94, 0.2) !important; border-color: #f43f5e !important; color: white !important; }
-        
-        .nav-active { background: rgba(255, 255, 255, 0.1) !important; color: white !important; backdrop-filter: blur(12px); }
+
+        /* 6. СТИЛІ НАВІГАЦІЇ */
+        .nav-active { 
+            background: rgba(255, 255, 255, 0.1) !important; 
+            color: white !important; 
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px);
+        }
         .nav-active i { color: #f43f5e !important; }
         .nav-inactive { color: #52525b; }
+
+        /* 7. КАТЕГОРІЇ ПОСЛУГ */
+        .category-btn.active { 
+            background: rgba(244, 63, 94, 0.2) !important; 
+            border-color: #f43f5e !important; 
+            color: white !important; 
+        }
+
+        /* 8. СКРОЛБАР ТА ІНШЕ */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     `;
     document.head.appendChild(style);
 };
@@ -73,36 +158,50 @@ window.updateSidebarUI = function(index) {
 };
 // ГОЛОВНА ФУНКЦІЯ ЗАМІСТЬ ALERT
 window.showGlowToast = function(message, type = 'success') {
-    const container = document.getElementById('toast-container');
+    // 1. Шукаємо контейнер або створюємо його прямо зараз у body
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'toast-container';
+        document.body.appendChild(container); // Додаємо саме в body, щоб fixed працював вірно
+    }
+
     const toast = document.createElement('div');
     toast.className = 'toast-item';
     
-    // Вибір іконки та кольору бордера залежно від типу
     let icon = '<i class="fa-solid fa-circle-check text-emerald-500"></i>';
+    let borderColor = '#10b981'; // emerald
+
     if (type === 'error') {
         icon = '<i class="fa-solid fa-circle-exclamation text-rose-500"></i>';
-        toast.style.borderLeft = '4px solid #f43f5e';
+        borderColor = '#f43f5e'; // rose
     } else if (type === 'info') {
         icon = '<i class="fa-solid fa-circle-info text-blue-400"></i>';
-        toast.style.borderLeft = '4px solid #3b82f6';
-    } else {
-        toast.style.borderLeft = '4px solid #10b981';
+        borderColor = '#3b82f6'; // blue
     }
 
+    toast.style.borderLeft = `4px solid ${borderColor}`;
+
     toast.innerHTML = `
-        <div class="text-lg">${icon}</div>
+        <div class="text-lg flex shrink-0">${icon}</div>
         <div class="flex-1">
-            <p class="text-[11px] font-black uppercase tracking-widest text-white leading-tight">${message}</p>
+            <p class="text-[11px] font-black uppercase tracking-widest text-white leading-tight italic-none">${message}</p>
         </div>
     `;
 
     container.appendChild(toast);
 
-    // Автоматичне видалення через 4 секунди
-    setTimeout(() => {
+    // Автоматичне видалення
+    const removeToast = () => {
         toast.classList.add('toast-out');
-        setTimeout(() => toast.remove(), 500);
-    }, 4000);
+        setTimeout(() => toast.remove(), 400);
+    };
+
+    const autoClose = setTimeout(removeToast, 3500);
+
+    // Дозволяємо закрити кліком
+    toast.onclick = removeToast;
 };
 window.logout = () => { localStorage.removeItem('wella_glow_user_id'); window.location.href = 'login.html'; };
 
