@@ -94,6 +94,24 @@
         
         /* Щоб контент не стрибав */
         section { scroll-snap-align: center; }
+        /* Контейнер для заголовка, щоб вони були на одній лінії */
+.section-header-container {
+    height: 80px; /* Фіксована висота для всіх заголовків */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-bottom: 2rem; /* mb-8 */
+}
+
+/* Однаковий відступ для всіх секцій */
+#main-scroller section {
+    padding-top: 2rem !important; 
+}
+        #main-scroller {
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch; /* для плавності на iPhone */
+}
     </style>
 </head>
 <body class="flex min-h-screen">
