@@ -500,7 +500,7 @@ function renderBonusesSection(client, programs, bonusHistory, visitHistory) {
                             <p class="text-xs font-black text-white uppercase mb-1">${p.name}</p>
                             <p class="text-[10px] text-zinc-500 leading-relaxed">${p.description}</p>
                         </div>`;
-                    }).join('') : '<p class="text-zinc-700 text-[9px] uppercase font-bold ml-2">Немає активних програм</p>'}
+                    }).join('')}
                 </div>
             </div>
 
