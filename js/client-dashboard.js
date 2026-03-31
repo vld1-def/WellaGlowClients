@@ -428,7 +428,7 @@ window.updateSummary = () => { const d = window.selectedDateValue; document.getE
 window.confirmBooking = async function() {
     if (!window.selectedServiceId || !window.selectedMasterId || !window.selectedDateValue || !window.selectedTimeValue) return window.showGlowToast("Заповніть всі кроки", "info");
     const { error } = await window.db.from('appointments').insert([{ client_id: userId, master_id: window.selectedMasterId, service_id: window.selectedServiceId, service_name: window.selectedServiceName, appointment_date: window.selectedDateValue, appointment_time: window.selectedTimeValue, price: window.selectedServicePrice, status: 'waiting' }]);
-    if (!error) {      window.showGlowToast("Запис успішно створено! ✨", "success");      setTimeout(() => window.location.reload(), 2000); // даємо час побачити тост }
+    if (!error) {      window.showGlowToast("Запис успішно створено! ✨", "success");      setTimeout(() => window.location.reload(), 2000); }
 };
 
 // 6. СИСТЕМА ВІДГУКІВ ТА СКАСУВАННЯ
