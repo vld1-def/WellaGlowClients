@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     client_id: newUser.id,
                     amount: 500,
                     type: 'accrual',
-                    reason: 'WELCOME BONUS',
+                    reason: 'ВІТАЛЬНИЙ БОНУС',
                     created_at: new Date()
                 }]);
 
