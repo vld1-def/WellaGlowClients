@@ -24,74 +24,68 @@ const injectGlowStyles = () => {
     const style = document.createElement('style');
     style.id = 'glow-app-styles';
     style.textContent = `
-        /* 1. ПІДТРИМКА SAFE AREAS & DYNAMIC VIEWPORT */
         :root {
             --sat: env(safe-area-inset-top);
             --sab: env(safe-area-inset-bottom);
         }
 
-        html, body {
-            /* Фікс висоти для Safari, щоб фон заповнював все під кнопками */
-            height: 100dvh;
-            width: 100vw;
-            margin: 0;
-            padding: 0;
-            overflow: hidden; /* Забороняємо загальний скрол, бо у нас SPA-скролер */
-            background-color: #050505;
-        }
-
-        /* ОСНОВНИЙ КОНТЕЙНЕР НА ВЕСЬ ЕКРАН */
-        #main-scroller {
-            height: 100dvh;
-            /* Контент буде видно під прозорим меню Safari */
-            padding-bottom: 0; 
-        }
-
-        /* ВНУТРІШНІ СЕКЦІЇ */
-        #main-scroller section {
-            height: 100dvh;
-            /* Відступ знизу, щоб останній контент був над плаваючим меню */
-            /* 16px (bottom-4) + 64px (висота меню) + Safe Area iPhone */
-            padding-bottom: calc(85px + var(--sab)) !important;
-            padding-top: calc(20px + var(--sat)) !important;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        /* ПЛАВАЮЧЕ МЕНЮ (TAB BAR) */
-        aside {
-            /* Розташування над домашньою смужкою iPhone */
-            bottom: calc(16px + var(--sab)) !important;
-            /* Зберігаємо ефект левітації */
-            left: 16px !important;
-            right: 16px !important;
-            width: auto !important;
-        }
-
-        /* 2. ТОСТИ (SPOVIWENNIA) ПІД ОСТРІВЦЕМ */
-        .toast-container {
-            top: calc(20px + var(--sat)) !important;
-        }
-
-        /* 3. РЕШТА ТВОЇХ СТИЛІВ (БЕЗ ЗМІН) */
         * { font-style: normal !important; }
-        @keyframes status-pulse-emerald { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); } 70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
-        @keyframes status-pulse-amber { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6); } 70% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
-        @keyframes pulse-blur { 0%, 100% { opacity: 0.1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(1.1); } }
-        
-        .pulse-confirmed { animation: status-pulse-emerald 2s infinite; }
-        .pulse-pending { animation: status-pulse-amber 2s infinite; }
-        .animate-flicker-blur { animation: pulse-blur 4s ease-in-out infinite; }
-        
+
+        /* МОБІЛЬНІ СТИЛІ (до 1024px) */
+        @media (max-width: 1023px) {
+            html, body {
+                height: 100dvh;
+                overflow: hidden;
+                background-color: #050505;
+            }
+            #main-scroller section {
+                height: 100dvh;
+                padding-top: calc(20px + var(--sat)) !important;
+                padding-bottom: calc(90px + var(--sab)) !important;
+            }
+            aside {
+                bottom: calc(12px + var(--sab)) !important;
+                left: 12px !important;
+                right: 12px !important;
+                width: auto !important;
+                position: fixed !important;
+            }
+            /* Виправлення overflow для карток в історії */
+            .history-card-grid {
+                display: grid !important;
+                grid-template-columns: auto 1fr auto;
+                gap: 10px;
+                align-items: center;
+            }
+        }
+
+        /* ДЕСКТОП СТИЛІ (від 1024px) */
+        @media (min-width: 1024px) {
+            aside {
+                width: 16rem !important; /* w-64 */
+                left: 0 !important;
+                top: 0 !important;
+                height: 100% !important;
+                border-radius: 0 !important;
+                border-right: 1px solid rgba(255,255,255,0.05) !important;
+            }
+            .history-card-grid {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        /* Анімації та інші стилі */
         .service-dropdown-list { max-height: 0; opacity: 0; overflow: hidden; transition: all 0.3s ease; pointer-events: none; }
         .service-dropdown-list.open { max-height: 350px; opacity: 1; pointer-events: auto; overflow-y: auto; }
-        
         .nav-active { background: rgba(255, 255, 255, 0.1) !important; color: white !important; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
         .nav-active i { color: #f43f5e !important; }
         .nav-inactive { color: #52525b; }
-        
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toast-in { from { opacity: 0; transform: translateY(-40px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .toast-container { position: fixed; top: calc(20px + var(--sat)); left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 350px; }
+        .toast-item { background: rgba(20, 20, 22, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #10b981; padding: 14px; border-radius: 18px; color: white; display: flex; align-items: center; gap: 12px; animation: toast-in 0.5s forwards; }
     `;
     document.head.appendChild(style);
 };
@@ -250,40 +244,82 @@ function renderProfileSection(client, history, reviews, upcoming) {
                 }).join('')}
             </div>
 
-            <div class="glass-panel p-6 lg:p-8 rounded-[2.5rem]">
-                <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none">Історія моїх візитів</h4>
-                <div class="space-y-10">
-                    ${history.map(h => {
-                        const rev = reviews.find(r => r.appointment_id === h.id);
-                        return `
-                        <div class="review-container flex flex-col">
-                            <div class="flex items-center justify-between gap-4">
-                                <div class="flex items-center gap-4 shrink-0">
-                                    <div class="w-10 h-10 bg-zinc-900 rounded-xl flex items-center justify-center font-bold text-xs text-zinc-500 uppercase">${new Date(h.visit_date).toLocaleDateString('uk-UA', {day: '2-digit', month: '2-digit'})}</div>
-                                    <div class="min-w-[120px]"><p class="text-sm font-bold text-white tracking-tight leading-none">${h.services?.name || 'Послуга'}</p><p class="text-[10px] text-zinc-600 mt-1 font-medium">Майстер: ${h.staff?.name || 'Майстер'}</p></div>
+           <div class="glass-panel p-5 lg:p-8 rounded-[2rem]">
+    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none italic-none">Історія моїх візитів</h4>
+    <div class="space-y-4">
+        ${history.length > 0 ? history.map(h => {
+            // Пошук існуючого відгуку для цього запису
+            const rev = reviews.find(r => r.appointment_id === h.id);
+            const serviceName = h.services?.name || 'Послуга';
+            const masterName = h.staff?.name || 'Майстер';
+
+            return `
+            <div class="review-container flex flex-col p-3 sm:p-4 bg-white/2 border border-white/5 rounded-2xl transition-all duration-300">
+                <div class="history-card-grid">
+                    
+                    <!-- 1. БЛОК ДАТИ -->
+                    <div class="w-10 h-10 bg-zinc-900 rounded-xl flex flex-col items-center justify-center shrink-0 border border-white/5">
+                        <span class="text-[11px] font-black text-white leading-none italic-none">${new Date(h.visit_date).getDate()}</span>
+                        <span class="text-[7px] font-bold text-zinc-500 uppercase mt-0.5 italic-none">${new Date(h.visit_date).toLocaleString('uk-UA', {month: 'short'})}</span>
+                    </div>
+
+                    <!-- 2. ІНФО ТА ЗІРОЧКИ (ЦЕНТР) -->
+                    <div class="overflow-hidden px-1 flex flex-col justify-center">
+                        <p class="text-[12px] font-bold text-white truncate leading-none italic-none">${serviceName}</p>
+                        <p class="text-[9px] text-zinc-600 mt-1 truncate italic-none">${masterName} • ₴${h.price}</p>
+                        
+                        <div class="flex items-center gap-2 mt-2">
+                            ${rev ? `
+                                <div class="flex gap-0.5 text-amber-500 text-[7px]">
+                                    ${'★'.repeat(rev.rating)}
                                 </div>
-                                <div class="flex-1 flex justify-center">
-                                    ${rev ? `<div class="flex flex-col items-center"><div class="flex gap-0.5 text-amber-500 text-[8px] mb-1">${'★'.repeat(rev.rating)}</div><p class="text-[9px] text-zinc-500 truncate w-32 text-center">${truncate(rev.comment, 20)}</p></div>` : `
-                                    <div class="flex gap-1.5 stars-row" onmouseleave="window.resetStars(this)">
-                                        ${[1, 2, 3, 4, 5].map(s => `<i class="fa-solid fa-star text-zinc-800 text-[10px] cursor-pointer hover:text-amber-500 transition duration-200" onmouseenter="window.hoverStars(this, ${s})" onclick="window.showReviewInput(this, ${s}, '${h.id}')"></i>`).join('')}
-                                    </div>`}
+                                <span class="text-[8px] text-zinc-500 truncate italic-none opacity-60">"${truncate(rev.comment, 15)}"</span>
+                            ` : `
+                                <div class="flex gap-1 stars-row" onmouseleave="window.resetStars(this)">
+                                    ${[1, 2, 3, 4, 5].map(s => `
+                                        <i class="fa-solid fa-star text-zinc-800 text-[10px] cursor-pointer transition duration-200" 
+                                           onmouseenter="window.hoverStars(this, ${s})" 
+                                           onclick="window.showReviewInput(this, ${s}, '${h.id}')"></i>
+                                    `).join('')}
                                 </div>
-                                <button onclick="window.repeatBooking('${h.service_id}', '${h.master_id}')" class="px-4 py-2 border border-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition shrink-0">Повторити</button>
-                            </div>
-                            <div class="review-input-block hidden mt-3 pt-3 border-t border-white/5">
-                                <div class="quick-replies hidden flex flex-wrap gap-2 mb-3">
-                                    <button onclick="window.setQuickText(this, 'Все чудово!')" class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[9px] font-bold text-zinc-400">Все чудово!</button>
-                                    <button onclick="window.setQuickText(this, 'Дуже задоволена')" class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[9px] font-bold text-zinc-400">Дуже задоволена</button>
-                                </div>
-                                <div class="flex gap-2">
-                                    <input type="text" maxlength="100" placeholder="Ваш коментар..." class="input-dark flex-1 !py-2 !px-3 !text-[11px]">
-                                    <button onclick="window.submitReview(this, '${h.id}', '${h.master_id}')" class="bg-emerald-500 px-5 rounded-xl text-[9px] font-black uppercase text-white">OK</button>
-                                </div>
-                            </div>
-                        </div>`;
-                    }).join('')}
+                            `}
+                        </div>
+                    </div>
+
+                    <!-- 3. КНОПКА ПОВТОРУ (ПРАВОРУЧ) -->
+                    <button onclick="window.repeatBooking('${h.service_id}', '${h.master_id}')" 
+                            class="px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-[8px] font-black uppercase tracking-tighter text-zinc-400 hover:text-white hover:bg-white/10 transition shrink-0 italic-none">
+                        Повтор
+                    </button>
                 </div>
+
+                <!-- ПРИХОВАНИЙ БЛОК ВВОДУ ВІДГУКУ -->
+                <div class="review-input-block hidden mt-3 pt-3 border-t border-white/5 animate-fade-in">
+                    <!-- Швидкі кнопки (показуються для 4-5 зірок у JS) -->
+                    <div class="quick-replies hidden flex flex-wrap gap-1.5 mb-3 italic-none">
+                        <button onclick="window.setQuickText(this, 'Все чудово!')" class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[8px] font-bold text-zinc-400 hover:text-white transition italic-none">Все чудово!</button>
+                        <button onclick="window.setQuickText(this, 'Дуже задоволена')" class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[8px] font-bold text-zinc-400 hover:text-white transition italic-none">Дуже задоволена</button>
+                        <button onclick="window.setQuickText(this, 'Чудовий майстер')" class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[8px] font-bold text-zinc-400 hover:text-white transition italic-none">Чудовий майстер</button>
+                    </div>
+                    
+                    <div class="flex gap-2">
+                        <input type="text" maxlength="100" placeholder="Ваш коментар..." 
+                               class="input-dark flex-1 !py-2 !px-3 !text-[10px] italic-none">
+                        <button onclick="window.submitReview(this, '${h.id}', '${h.master_id}')" 
+                                class="bg-emerald-500 hover:bg-emerald-400 text-white px-4 rounded-xl text-[9px] font-black uppercase transition italic-none">
+                            OK
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('') : `
+            <div class="text-center py-10">
+                <i class="fa-solid fa-calendar-xmark text-zinc-800 text-xl mb-3"></i>
+                <p class="text-zinc-600 text-[10px] font-bold uppercase tracking-widest italic-none">Історія візитів порожня</p>
             </div>
+        `}
+    </div>
+</div>
         </div>
     `;
 }
