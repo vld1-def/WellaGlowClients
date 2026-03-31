@@ -117,9 +117,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         ]);
 
         window.allServicesData = services.data;
-        renderProfileSection(client.data, history.data, reviews.data, upcoming.data);
+        renderProfileSection(client.data, history.data, reviews.data, upcoming.data, bonusHistory.data);
         renderBookingSection();
-        renderBonusesSection(client.data, bonusPrograms.data, bonusHistory.data, history.data);
+        renderBonusesSection(client.data, bonusPrograms.data, bonusHistory.data, history.data, bonusHistory.data);
         window.updateSidebarUI(0);
     } catch (e) { console.error("Data error:", e); }
 });
