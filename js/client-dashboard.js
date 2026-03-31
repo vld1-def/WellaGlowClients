@@ -284,9 +284,15 @@ function renderBonusesSection(client, programs, bonusHistory, visitHistory) {
     const container = document.getElementById('page-bonuses');
     const balance = client?.bonuses || 0;
 
+    // Допоміжна функція для підрахунку візитів за категорією
+    const countVisits = (category) => {
+        if (!category) return visitHistory.length; // Якщо категорія не вказана, рахуємо всі візити
+        return visitHistory.filter(h => h.services?.category === category).length;
+    };
+
     container.innerHTML = `
         <div class="space-y-8 animate-fade-in">
-            <!-- Зменшений заголовок -->
+            <!-- Заголовок -->
             <div class="mt-4">
                 <h2 class="text-xl font-extrabold text-white uppercase tracking-tighter leading-none italic-none">Бонусна програма</h2>
                 <p class="text-zinc-500 text-[9px] font-bold uppercase tracking-widest mt-2 leading-none italic-none">Твої накопичення та привілеї</p>
@@ -299,30 +305,60 @@ function renderBonusesSection(client, programs, bonusHistory, visitHistory) {
                 <h3 class="text-5xl font-black text-white tracking-tighter italic-none">${balance.toLocaleString()}</h3>
             </div>
 
-            <!-- Привілеї -->
+            <!-- Список привілеїв (Активні та Недоступні) -->
             <div class="space-y-4">
-                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-2 italic-none">Доступні привілеї</h4>
+                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-2 italic-none">Статус привілеїв</h4>
+                
                 ${programs.map(p => {
+                    const currentVisits = countVisits(p.service_category);
+                    const isLocked = currentVisits < p.required_visits;
                     const alreadyGot = bonusHistory.some(t => t.reason.toUpperCase() === p.name.toUpperCase());
-                    const status = alreadyGot ? { t: 'Нараховано', c: 'text-blue-400 bg-blue-400/10' } : { t: 'Активний', c: 'text-emerald-500 bg-emerald-500/10' };
+
+                    let statusText = 'Активний';
+                    let statusClass = 'text-emerald-500 bg-emerald-500/10';
+                    let icon = '<i class="fa-solid fa-circle-check text-emerald-500 text-[10px]"></i>';
+
+                    if (p.program_type === 'once' && alreadyGot) {
+                        statusText = 'Нараховано';
+                        statusClass = 'text-blue-400 bg-blue-400/10';
+                    } else if (isLocked) {
+                        statusText = 'Недоступно';
+                        statusClass = 'text-zinc-600 bg-zinc-800';
+                        icon = '<i class="fa-solid fa-lock text-zinc-700 text-[10px]"></i>';
+                    }
+
                     return `
-                    <div class="glass-panel p-5 rounded-[2rem] border border-white/5 relative">
+                    <div class="glass-panel p-5 rounded-[2rem] border border-white/5 relative ${isLocked ? 'opacity-40 grayscale' : ''} transition-all duration-500">
                         <div class="flex justify-between items-start mb-4">
-                            <span class="px-2 py-1 rounded text-[7px] font-black uppercase tracking-widest ${status.c} italic-none">${status.t}</span>
-                            <i class="fa-solid fa-circle-check text-emerald-500 text-[10px]"></i>
+                            <span class="px-2 py-1 rounded text-[7px] font-black uppercase tracking-widest ${statusClass} italic-none">
+                                ${statusText}
+                            </span>
+                            ${icon}
                         </div>
                         <p class="text-xs font-black text-white uppercase mb-1 italic-none">${p.name}</p>
                         <p class="text-[10px] text-zinc-500 leading-relaxed italic-none">${p.description}</p>
+                        
+                        ${isLocked ? `
+                            <div class="mt-4 space-y-2">
+                                <div class="flex justify-between text-[9px] font-black uppercase text-rose-500 italic-none">
+                                    <span>Прогрес</span>
+                                    <span>${currentVisits} / ${p.required_visits} візитів</span>
+                                </div>
+                                <div class="h-1 w-full bg-zinc-900 rounded-full overflow-hidden">
+                                    <div class="h-full bg-rose-500" style="width: ${(currentVisits / p.required_visits) * 100}%"></div>
+                                </div>
+                            </div>
+                        ` : ''}
                     </div>`;
                 }).join('')}
             </div>
 
-            <!-- ПОВЕРНЕНО: ІСТОРІЯ ТРАНЗАКЦІЙ -->
+            <!-- Історія операцій -->
             <div class="space-y-4">
                 <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-2 italic-none">Історія операцій</h4>
                 <div class="space-y-3">
                     ${bonusHistory.length > 0 ? bonusHistory.map(t => `
-                        <div class="flex items-center justify-between p-4 bg-white/2 rounded-2xl border border-white/5 group hover:border-white/10 transition italic-none">
+                        <div class="flex items-center justify-between p-4 bg-white/2 rounded-2xl border border-white/5 italic-none transition">
                             <div class="flex items-center gap-4 italic-none">
                                 <div class="w-10 h-10 rounded-xl bg-zinc-900 border border-white/5 flex items-center justify-center italic-none">
                                     <i class="fa-solid ${t.amount > 0 ? 'fa-plus text-emerald-500' : 'fa-minus text-rose-500'} text-[10px]"></i>
