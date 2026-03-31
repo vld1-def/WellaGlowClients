@@ -101,18 +101,6 @@ const injectGlowStyles = () => {
     -webkit-touch-callout: none !important;
 }
 
-/* 2. Вимикаємо стандартний контур фокусу браузера */
-button:focus, a:focus, div:focus {
-    outline: none !important;
-    box-shadow: none !important;
-}
-
-/* 3. Примусово прибираємо будь-які активні стани, які можуть давати блік */
-.nav-inactive:active, .nav-active:active {
-    background-color: transparent !important;
-    opacity: 1 !important;
-}
-
 /* 4. Забороняємо виділення тексту при випадковому довгому натисканні */
 button, span, i {
     user-select: none !important;
