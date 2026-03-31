@@ -341,4 +341,40 @@ window.cancelAppointment = async (aid, cid) => {
     await window.db.from('clients').update({ cancelled_appointments: (cl.cancelled_appointments || 0) + 1 }).eq('id', cid);
     window.showGlowToast("Запис скасовано", "info"); setTimeout(() => window.location.reload(), 1500);
 };
-window.repeatBooking = (sid, mid) => { window.scrollToPage(1); setTimeout(() => window.selectServiceUI(sid, 'Завантаження...', 0, mid), 500); };
+window.repeatBooking = (sid, mid) => {
+    // 1. Переходимо на сторінку запису
+    window.scrollToPage(1); 
+
+    // Даємо невелику затримку, щоб сторінка прокрутилася
+    setTimeout(() => {
+        // 2. Шукаємо дані послуги, яку хочемо повторити
+        const service = window.allServicesData.find(s => s.id === sid);
+        if (!service) {
+            window.showGlowToast("Послугу не знайдено в базі", "error");
+            return;
+        }
+
+        // 3. Знаходимо кнопку категорії (Hair, Nail, Makeup) і натискаємо її
+        // Шукаємо по тексту або по атрибуту onclick
+        const categoryButtons = document.querySelectorAll('.category-btn');
+        let targetBtn = null;
+
+        categoryButtons.forEach(btn => {
+            if (btn.getAttribute('onclick').includes(`'${service.category}'`)) {
+                targetBtn = btn;
+            }
+        });
+
+        if (targetBtn) {
+            // Викликаємо функцію фільтрації категорій
+            window.filterByCategory(service.category, targetBtn);
+        }
+
+        // 4. Обираємо саму послугу (з невеликою затримкою для рендеру списку)
+        setTimeout(() => {
+            window.selectServiceUI(sid, service.name, service.price, mid);
+            window.showGlowToast("Дані візиту підтягнуто. Оберіть час! ✨", "info");
+        }, 300);
+
+    }, 500); 
+};
