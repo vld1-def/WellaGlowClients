@@ -116,28 +116,40 @@
 </head>
 <body class="flex min-h-screen bg-[#050505] text-[#e2e8f0]">
 
-    <!-- НАВІГАЦІЯ: Збоку на ПК, Знизу на мобільних -->
-    <aside class="fixed bottom-0 lg:top-0 left-0 z-[100] w-full lg:w-64 h-16 lg:h-full bg-black/80 backdrop-blur-xl border-t lg:border-r border-white/5 flex flex-row lg:flex-col shadow-2xl transition-all">
-        <div class="hidden lg:flex p-6 flex-col">
-            <h1 class="text-lg font-extrabold text-white tracking-tighter uppercase leading-none">Wella Glow</h1>
-            <p class="text-[8px] text-rose-500 font-bold tracking-[0.4em] uppercase opacity-80 mt-1">studio</p>
-        </div>
+  <!-- SIDEBAR: ПК - збоку, МОБІЛКА - плаваючий Tab Bar знизу -->
+<aside class="fixed bottom-6 left-4 right-4 lg:top-0 lg:left-0 lg:right-auto z-[100] w-auto lg:w-64 h-16 lg:h-full glass-panel rounded-2xl lg:rounded-none bg-black/60 lg:bg-black/40 backdrop-blur-2xl border border-white/5 lg:border-r lg:border-t-0 flex flex-row lg:flex-col shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500">
+    
+    <!-- Логотип (тільки для ПК) -->
+    <div class="hidden lg:flex p-8 flex-col">
+        <h1 class="text-xl font-extrabold text-white tracking-tighter uppercase leading-none">Wella Glow</h1>
+        <p class="text-[9px] text-rose-500 font-bold tracking-[0.4em] uppercase mt-1">studio</p>
+    </div>
 
-        <nav class="flex flex-row lg:flex-col flex-1 px-2 lg:px-4 items-center lg:items-stretch justify-around lg:justify-start lg:space-y-4">
-            <a href="#" id="nav-profile" onclick="window.renderProfilePage()" class="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 p-2 lg:p-3 transition text-zinc-400 group">
-                <i class="fa-solid fa-circle-user text-lg lg:text-sm"></i> 
-                <span class="text-[9px] lg:text-xs uppercase font-bold tracking-widest">Профіль</span>
-            </a>
-            <a href="#" id="nav-booking" onclick="window.renderBookingPage()" class="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 p-2 lg:p-3 transition text-zinc-400 group">
-                <i class="fa-solid fa-calendar-plus text-lg lg:text-sm"></i> 
-                <span class="text-[9px] lg:text-xs uppercase font-bold tracking-widest">Запис</span>
-            </a>
-            <a href="#" id="nav-bonuses" onclick="window.renderBonusPage()" class="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 p-2 lg:p-3 transition text-zinc-400 group">
-                <i class="fa-solid fa-gift text-lg lg:text-sm"></i> 
-                <span class="text-[9px] lg:text-xs uppercase font-bold tracking-widest">Бонуси</span>
-            </a>
-        </nav>
-    </aside>
+    <!-- Кнопки навігації -->
+    <nav class="flex flex-row lg:flex-col flex-1 px-2 lg:px-4 items-center lg:items-stretch justify-around lg:justify-start lg:space-y-3">
+        
+        <button id="nav-profile" onclick="window.renderProfilePage()" class="flex-1 lg:flex-none flex flex-col lg:flex-row items-center gap-1 lg:gap-4 p-2 lg:p-4 rounded-xl lg:rounded-2xl transition-all duration-300 text-zinc-500">
+            <i class="fa-solid fa-circle-user text-lg lg:text-sm"></i> 
+            <span class="text-[9px] lg:text-xs uppercase font-black tracking-widest">Профіль</span>
+        </button>
+
+        <button id="nav-booking" onclick="window.renderBookingPage()" class="flex-1 lg:flex-none flex flex-col lg:flex-row items-center gap-1 lg:gap-4 p-2 lg:p-4 rounded-xl lg:rounded-2xl transition-all duration-300 text-zinc-500">
+            <i class="fa-solid fa-calendar-plus text-lg lg:text-sm"></i> 
+            <span class="text-[9px] lg:text-xs uppercase font-black tracking-widest">Запис</span>
+        </button>
+
+        <button id="nav-bonuses" onclick="window.renderBonusPage()" class="flex-1 lg:flex-none flex flex-col lg:flex-row items-center gap-1 lg:gap-4 p-2 lg:p-4 rounded-xl lg:rounded-2xl transition-all duration-300 text-zinc-500">
+            <i class="fa-solid fa-gift text-lg lg:text-sm"></i> 
+            <span class="text-[9px] lg:text-xs uppercase font-black tracking-widest">Бонуси</span>
+        </button>
+
+        <!-- Вихід (тільки іконка на мобільних) -->
+        <button onclick="logout()" class="flex-1 lg:flex-none flex flex-col lg:flex-row items-center gap-1 lg:gap-4 p-2 lg:p-4 rounded-xl lg:mt-auto lg:mb-4 text-zinc-700 hover:text-rose-500 transition">
+            <i class="fa-solid fa-right-from-bracket text-lg lg:text-sm"></i>
+            <span class="text-[9px] lg:text-xs uppercase font-black tracking-widest hidden lg:block">Вийти</span>
+        </button>
+    </nav>
+</aside>
 
     <!-- ГОЛОВНИЙ КОНТЕНТ -->
     <main class="flex-1 ml-0 lg:ml-64 p-5 lg:p-10 pb-24 lg:pb-10">
