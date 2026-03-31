@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // 5. РЕНДЕР ПРОФІЛЮ
-function renderProfileSection(client, history, reviews, upcoming) {
+function renderProfileSection(client, history, reviews, upcoming, bonusHistory = []) {
     const container = document.getElementById('page-profile');
     const firstName = client.full_name.split(' ')[0];
     const actualBalance = bonusHistory.reduce((sum, t) => sum + t.amount, 0);
