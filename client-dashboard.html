@@ -64,136 +64,73 @@
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #050505; }
         ::-webkit-scrollbar-thumb { background: #1e1e21; border-radius: 10px; }
+
+        /* Вимикаємо скролбар, щоб було чисто */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Тільки для мобільних дозволяємо свайп, на компі краще тільки через кнопки */
+@media (min-width: 1024px) {
+    #main-scroller { overflow-x: hidden; }
+}
+
+/* Компактна лояльність для мобілки */
+.loyalty-card-mobile {
+    padding: 1rem !important;
+    margin-bottom: 1rem !important;
+}
+.loyalty-card-mobile h3 { font-size: 1.25rem !important; }
     </style>
 </head>
 <body class="flex min-h-screen">
 
     <!-- SIDEBAR -->
     <!-- SIDEBAR: Знизу на мобільних, збоку на десктопі -->
-<aside class="fixed bottom-0 lg:top-0 left-0 z-[100] w-full lg:w-64 h-16 lg:h-full bg-black/80 lg:bg-black/50 backdrop-blur-xl lg:backdrop-blur-none border-t lg:border-r border-white/5 flex flex-row lg:flex-col shadow-[0_-10px_20px_rgba(0,0,0,0.5)] lg:shadow-none transition-all">
-    
-    <!-- Логотип: Тільки для десктопа -->
-    <div class="hidden lg:flex p-6 flex-col">
-        <h1 class="text-lg font-extrabold text-white tracking-tighter uppercase leading-none">Wella Glow</h1>
-        <p class="text-[8px] text-rose-500 font-bold tracking-[0.4em] uppercase opacity-80 mt-1">studio</p>
+<!-- SIDEBAR / TABBAR -->
+<aside class="fixed bottom-0 lg:top-0 left-0 z-[100] w-full lg:w-64 h-20 lg:h-full bg-black/80 backdrop-blur-2xl border-t lg:border-r border-white/5 flex flex-row lg:flex-col shadow-2xl">
+    <div class="hidden lg:flex p-8 flex-col">
+        <h1 class="text-xl font-extrabold text-white tracking-tighter uppercase leading-none">Wella Glow</h1>
+        <p class="text-[9px] text-rose-500 font-bold tracking-[0.4em] mt-1">studio</p>
     </div>
 
-    <!-- Навігація: Рядок на мобільних, колонка на десктопі -->
-    <nav class="flex flex-row lg:flex-col flex-1 px-2 lg:px-4 items-center lg:items-stretch justify-around lg:justify-start lg:space-y-4">
-        
-        <a href="#" id="nav-profile" onclick="window.renderProfilePage()" class="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 p-2 lg:p-3 transition text-zinc-400 group">
-            <i class="fa-solid fa-circle-user text-lg lg:text-sm"></i> 
-            <span class="text-[9px] lg:text-xs uppercase font-bold tracking-widest">Профіль</span>
-        </a>
+    <!-- Кнопки в меню стали ширшими для пальця (flex-1) -->
+    <nav class="flex flex-row lg:flex-col flex-1 px-2 lg:px-4 items-center lg:items-stretch justify-around lg:justify-start lg:space-y-2">
+        <button onclick="window.scrollToPage(0)" id="nav-profile" class="flex-1 lg:flex-none flex flex-col lg:flex-row items-center gap-1 lg:gap-4 p-3 lg:p-4 transition rounded-2xl">
+            <i class="fa-solid fa-circle-user text-xl lg:text-sm"></i> 
+            <span class="text-[10px] lg:text-xs uppercase font-black tracking-widest">Профіль</span>
+        </button>
 
-        <a href="#" id="nav-booking" onclick="window.renderBookingPage()" class="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 p-2 lg:p-3 transition text-zinc-400 group">
-            <i class="fa-solid fa-calendar-plus text-lg lg:text-sm"></i> 
-            <span class="text-[9px] lg:text-xs uppercase font-bold tracking-widest">Запис</span>
-        </a>
+        <button onclick="window.scrollToPage(1)" id="nav-booking" class="flex-1 lg:flex-none flex flex-col lg:flex-row items-center gap-1 lg:gap-4 p-3 lg:p-4 transition rounded-2xl">
+            <i class="fa-solid fa-calendar-plus text-xl lg:text-sm"></i> 
+            <span class="text-[10px] lg:text-xs uppercase font-black tracking-widest">Запис</span>
+        </button>
 
-        <a href="#" id="nav-bonuses" onclick="window.renderBonusPage()" class="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 p-2 lg:p-3 transition text-zinc-400 group">
-            <i class="fa-solid fa-gift text-lg lg:text-sm"></i> 
-            <span class="text-[9px] lg:text-xs uppercase font-bold tracking-widest">Бонуси</span>
-        </a>
-
-        <!-- Вихід: Тільки іконка на мобільних -->
-        <button onclick="logout()" class="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 p-2 lg:p-3 transition text-zinc-600 hover:text-rose-500 lg:mt-auto lg:mb-4">
-            <i class="fa-solid fa-right-from-bracket text-lg lg:text-sm"></i>
-            <span class="text-[9px] lg:text-xs uppercase font-bold tracking-widest lg:block hidden">Вийти</span>
+        <button onclick="window.scrollToPage(2)" id="nav-bonuses" class="flex-1 lg:flex-none flex flex-col lg:flex-row items-center gap-1 lg:gap-4 p-3 lg:p-4 transition rounded-2xl">
+            <i class="fa-solid fa-gift text-xl lg:text-sm"></i> 
+            <span class="text-[10px] lg:text-xs uppercase font-black tracking-widest">Бонуси</span>
         </button>
     </nav>
 </aside>
 
-    <!-- MAIN -->
-    <main class="flex-1 ml-0 lg:ml-64 p-5 lg:p-8 pb-24 lg:pb-8">
-        
-        <!-- HEADER -->
-        <header class="flex justify-between items-center mb-10">
-            <div>
-                <h2 class="text-2xl font-extrabold text-white tracking-tight leading-none">Вітаємо, <span id="clientFirstName">...</span>! ✨</h2>
-                <p class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest mt-2 leading-none">Твій день для краси сьогодні</p>
-            </div>
-            <button class="bg-white/5 p-2 rounded-xl text-zinc-400 hover:text-white transition">
-                <i class="fa-solid fa-gear"></i>
-            </button>
-        </header>
+<!-- MAIN CONTAINER: Горизонтальний скрол -->
+<main id="main-scroller" class="flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar h-screen ml-0 lg:ml-64">
+    
+    <!-- SECTION 1: ПРОФІЛЬ -->
+    <section id="section-profile" class="w-full lg:w-full shrink-0 snap-center p-5 lg:p-10 pb-32 overflow-y-auto h-full">
+        <!-- Вміст профілю завантажиться через JS -->
+    </section>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <!-- LEFT COLUMN: STATUS & BOOKING -->
-            <div class="lg:col-span-1 space-y-6">
-                
-                <!-- LOYALTY CARD -->
-                <div class="glass-panel p-6 rounded-[2rem] border-t-4 border-t-amber-500 relative overflow-hidden">
-                    <div class="absolute -right-10 -top-10 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl"></div>
-                    <div class="flex justify-between items-start mb-10">
-                        <div>
-                            <p class="text-[9px] text-zinc-500 uppercase font-black tracking-widest leading-none">Статус лояльності</p>
-                            <h3 id="statusName" class="text-xl font-black text-amber-500 mt-2 uppercase tracking-tighter leading-none">Завантаження...</h3>
-                        </div>
-                        <i class="fa-solid fa-crown text-amber-500"></i>
-                    </div>
-                    
-                    <div class="flex justify-between items-end">
-                        <div>
-                            <p class="text-3xl font-black text-white leading-none"><span id="userBonuses">0</span> <span class="text-xs font-bold text-zinc-600 ml-1 italic-none">балів</span></p>
-                            <p class="text-[9px] text-zinc-500 mt-2 uppercase font-black leading-none">Знижка на послуги: 10%</p>
-                        </div>
-                        <div class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/5">
-                            <i class="fa-solid fa-qrcode text-zinc-400"></i>
-                        </div>
-                    </div>
-                </div>
+    <!-- SECTION 2: ЗАПИС -->
+    <section id="section-booking" class="w-full lg:w-full shrink-0 snap-center p-5 lg:p-10 pb-32 overflow-y-auto h-full">
+        <!-- Вміст бронювання завантажиться через JS -->
+    </section>
 
-            <!-- RIGHT COLUMN: HISTORY & REVIEWS -->
-            <div class="lg:col-span-2 space-y-8">
-                
-                <!-- UPCOMING APPOINTMENT -->
-                <div id="nextAppointmentBox" class="hidden p-6 rounded-[2.5rem] bg-rose-500/5 border border-rose-500/20">
-                    <div class="flex justify-between items-center mb-4">
-                        <h4 class="text-xs font-black text-rose-500 uppercase tracking-widest leading-none">Найближчий запис</h4>
-                        <span class="status-badge bg-rose-500 text-white">Підтверджено</span>
-                    </div>
-                    <div class="flex justify-between items-end">
-                        <div class="flex gap-6 items-center">
-                            <div class="text-center">
-                                <p id="nextDay" class="text-2xl font-black text-white leading-none tracking-tighter">--</p>
-                                <p id="nextMonth" class="text-[10px] text-zinc-500 font-bold uppercase mt-1 leading-none">---</p>
-                            </div>
-                            <div class="h-10 w-px bg-white/10"></div>
-                            <div>
-                                <p id="nextService" class="text-base font-bold text-white tracking-tight">Завантаження...</p>
-                                <p id="nextInfo" class="text-[11px] text-zinc-500 font-medium">---</p>
-                            </div>
-                        </div>
-                        <button class="text-[9px] font-black text-zinc-400 uppercase tracking-widest hover:text-white transition">Скасувати</button>
-                    </div>
-                </div>
+    <!-- SECTION 3: БОНУСИ -->
+    <section id="section-bonuses" class="w-full lg:w-full shrink-0 snap-center p-5 lg:p-10 pb-32 overflow-y-auto h-full">
+        <!-- Вміст бонусів завантажиться через JS -->
+    </section>
 
-                <!-- HISTORY -->
-                <div class="glass-panel p-8 rounded-[2.5rem]">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none">Історія візитів</h4>
-                    <div id="historyList" class="space-y-6">
-                        <!-- Візит 1 -->
-                        <div class="flex justify-between items-center group">
-                            <div class="flex items-center gap-4">
-                            </div>
-                            <button class="px-4 py-2 border border-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-white/5 transition">Повторити</button>
-                        </div>
-                        <!-- Візит 2 -->
-                        <div class="flex justify-between items-center">
-                            <div class="flex items-center gap-4">
-                            </div>
-                            <button class="px-4 py-2 border border-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-white/5 transition">Повторити</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- REVIEWS -->
-
-            </div>
-        </div>
-    </main>
+</main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-init.js"></script>
     <script src="js/client-dashboard.js"></script>
