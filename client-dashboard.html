@@ -114,54 +114,37 @@
 }
     </style>
 </head>
-<body class="flex min-h-screen">
+<body class="flex min-h-screen bg-[#050505] text-[#e2e8f0]">
 
- <!-- 1. SIDEBAR ДЛЯ КОМП'ЮТЕРІВ (Показується тільки на lg: 1024px+) -->
-<aside class="hidden lg:flex fixed top-0 left-0 z-[100] w-64 h-full bg-black/40 border-r border-white/5 flex-col shadow-2xl">
-    <div class="p-8">
-        <h1 class="text-xl font-extrabold text-white tracking-tighter uppercase leading-none">Wella Glow</h1>
-        <p class="text-[9px] text-rose-500 font-bold tracking-[0.4em] mt-1">studio</p>
-    </div>
-    <nav class="flex-1 px-4 space-y-2 mt-4">
-        <button onclick="window.scrollToPage(0)" id="side-profile" class="w-full flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 nav-inactive">
-            <i class="fa-solid fa-circle-user"></i> <span class="text-xs uppercase font-black tracking-widest">Профіль</span>
-        </button>
-        <button onclick="window.scrollToPage(1)" id="side-booking" class="w-full flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 nav-inactive">
-            <i class="fa-solid fa-calendar-plus"></i> <span class="text-xs uppercase font-black tracking-widest">Запис</span>
-        </button>
-        <button onclick="window.scrollToPage(2)" id="side-bonuses" class="w-full flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 nav-inactive">
-            <i class="fa-solid fa-gift"></i> <span class="text-xs uppercase font-black tracking-widest">Бонуси</span>
-        </button>
-    </nav>
-    <div class="p-8 border-t border-white/5">
-        <button onclick="logout()" class="text-[10px] font-black uppercase text-zinc-600 hover:text-rose-500 transition">Вийти</button>
-    </div>
-</aside>
+    <!-- НАВІГАЦІЯ: Збоку на ПК, Знизу на мобільних -->
+    <aside class="fixed bottom-0 lg:top-0 left-0 z-[100] w-full lg:w-64 h-16 lg:h-full bg-black/80 backdrop-blur-xl border-t lg:border-r border-white/5 flex flex-row lg:flex-col shadow-2xl transition-all">
+        <div class="hidden lg:flex p-6 flex-col">
+            <h1 class="text-lg font-extrabold text-white tracking-tighter uppercase leading-none">Wella Glow</h1>
+            <p class="text-[8px] text-rose-500 font-bold tracking-[0.4em] uppercase opacity-80 mt-1">studio</p>
+        </div>
 
-<!-- 2. TABBAR ДЛЯ ТЕЛЕФОНІВ (Приховується на lg: 1024px+) -->
-<nav class="lg:hidden fixed bottom-4 left-4 right-4 h-16 glass-panel rounded-2xl flex items-center justify-around z-[100] border border-white/5 shadow-2xl">
-    <button onclick="window.scrollToPage(0)" id="btn-profile" class="flex flex-col items-center gap-1 w-20 py-2 rounded-xl transition-all duration-300 nav-inactive">
-        <i class="fa-solid fa-circle-user text-lg"></i>
-        <span class="text-[9px] font-black uppercase tracking-widest">Профіль</span>
-    </button>
-    <button onclick="window.scrollToPage(1)" id="btn-booking" class="flex flex-col items-center gap-1 w-20 py-2 rounded-xl transition-all duration-300 nav-inactive">
-        <i class="fa-solid fa-calendar-plus text-lg"></i>
-        <span class="text-[9px] font-black uppercase tracking-widest">Запис</span>
-    </button>
-    <button onclick="window.scrollToPage(2)" id="btn-bonuses" class="flex flex-col items-center gap-1 w-20 py-2 rounded-xl transition-all duration-300 nav-inactive">
-        <i class="fa-solid fa-gift text-lg"></i>
-        <span class="text-[9px] font-black uppercase tracking-widest">Бонуси</span>
-    </button>
-</nav>
+        <nav class="flex flex-row lg:flex-col flex-1 px-2 lg:px-4 items-center lg:items-stretch justify-around lg:justify-start lg:space-y-4">
+            <a href="#" id="nav-profile" onclick="window.renderProfilePage()" class="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 p-2 lg:p-3 transition text-zinc-400 group">
+                <i class="fa-solid fa-circle-user text-lg lg:text-sm"></i> 
+                <span class="text-[9px] lg:text-xs uppercase font-bold tracking-widest">Профіль</span>
+            </a>
+            <a href="#" id="nav-booking" onclick="window.renderBookingPage()" class="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 p-2 lg:p-3 transition text-zinc-400 group">
+                <i class="fa-solid fa-calendar-plus text-lg lg:text-sm"></i> 
+                <span class="text-[9px] lg:text-xs uppercase font-bold tracking-widest">Запис</span>
+            </a>
+            <a href="#" id="nav-bonuses" onclick="window.renderBonusPage()" class="flex flex-col lg:flex-row items-center gap-1 lg:gap-3 p-2 lg:p-3 transition text-zinc-400 group">
+                <i class="fa-solid fa-gift text-lg lg:text-sm"></i> 
+                <span class="text-[9px] lg:text-xs uppercase font-bold tracking-widest">Бонуси</span>
+            </a>
+        </nav>
+    </aside>
 
-<!-- 3. ГОЛОВНИЙ КОНТЕЙНЕР -->
-<main id="main-scroller" class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar scroll-smooth h-screen ml-0 lg:ml-64">
-    <!-- Секції залишаються w-screen на мобільних, але ми обмежимо контент всередині них для ПК -->
-    <section class="w-screen lg:w-[calc(100vw-16rem)] flex-shrink-0 snap-center p-5 lg:p-12 pb-32 overflow-y-auto" id="page-profile"></section>
-    <section class="w-screen lg:w-[calc(100vw-16rem)] flex-shrink-0 snap-center p-5 lg:p-12 pb-32 overflow-y-auto" id="page-booking"></section>
-    <section class="w-screen lg:w-[calc(100vw-16rem)] flex-shrink-0 snap-center p-5 lg:p-12 pb-32 overflow-y-auto" id="page-bonuses"></section>
-</main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- ГОЛОВНИЙ КОНТЕНТ -->
+    <main class="flex-1 ml-0 lg:ml-64 p-5 lg:p-10 pb-24 lg:pb-10">
+        <!-- Сюди JS вставляє контент -->
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase-init.js"></script>
     <script src="js/client-dashboard.js"></script>
 </body>
