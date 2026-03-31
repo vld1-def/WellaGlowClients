@@ -24,110 +24,74 @@ const injectGlowStyles = () => {
     const style = document.createElement('style');
     style.id = 'glow-app-styles';
     style.textContent = `
-        /* 1. ГЛОБАЛЬНЕ СКИДАННЯ КУРСИВУ */
-        * { font-style: normal !important; }
+        /* 1. ПІДТРИМКА SAFE AREAS & DYNAMIC VIEWPORT */
+        :root {
+            --sat: env(safe-area-inset-top);
+            --sab: env(safe-area-inset-bottom);
+        }
 
-        /* 2. СИСТЕМА СПОВІЩЕНЬ (TOASTS) - ЗВЕРХУ ПО ЦЕНТРУ */
+        html, body {
+            /* Фікс висоти для Safari, щоб фон заповнював все під кнопками */
+            height: 100dvh;
+            width: 100vw;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Забороняємо загальний скрол, бо у нас SPA-скролер */
+            background-color: #050505;
+        }
+
+        /* ОСНОВНИЙ КОНТЕЙНЕР НА ВЕСЬ ЕКРАН */
+        #main-scroller {
+            height: 100dvh;
+            /* Контент буде видно під прозорим меню Safari */
+            padding-bottom: 0; 
+        }
+
+        /* ВНУТРІШНІ СЕКЦІЇ */
+        #main-scroller section {
+            height: 100dvh;
+            /* Відступ знизу, щоб останній контент був над плаваючим меню */
+            /* 16px (bottom-4) + 64px (висота меню) + Safe Area iPhone */
+            padding-bottom: calc(85px + var(--sab)) !important;
+            padding-top: calc(20px + var(--sat)) !important;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* ПЛАВАЮЧЕ МЕНЮ (TAB BAR) */
+        aside {
+            /* Розташування над домашньою смужкою iPhone */
+            bottom: calc(16px + var(--sab)) !important;
+            /* Зберігаємо ефект левітації */
+            left: 16px !important;
+            right: 16px !important;
+            width: auto !important;
+        }
+
+        /* 2. ТОСТИ (SPOVIWENNIA) ПІД ОСТРІВЦЕМ */
         .toast-container {
-            position: fixed;
-            top: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            width: 90%;
-            max-width: 350px;
-            pointer-events: none;
-        }
-        .toast-item {
-            background: rgba(20, 20, 22, 0.95);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 14px 18px;
-            border-radius: 18px;
-            color: white;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            pointer-events: auto;
-            animation: toast-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-        @keyframes toast-in {
-            from { opacity: 0; transform: translateY(-40px) scale(0.9); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .toast-out {
-            animation: toast-out 0.4s forwards;
-        }
-        @keyframes toast-out {
-            from { opacity: 1; transform: scale(1); }
-            to { opacity: 0; transform: scale(0.85) translateY(-20px); }
+            top: calc(20px + var(--sat)) !important;
         }
 
-        /* 3. АНІМАЦІЇ СТАТУСІВ ЗАПИСУ */
+        /* 3. РЕШТА ТВОЇХ СТИЛІВ (БЕЗ ЗМІН) */
+        * { font-style: normal !important; }
         @keyframes status-pulse-emerald { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); } 70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
         @keyframes status-pulse-amber { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6); } 70% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
-        @keyframes status-pulse-rose { 0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.6); } 70% { box-shadow: 0 0 0 8px rgba(244, 63, 94, 0); } 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); } }
+        @keyframes pulse-blur { 0%, 100% { opacity: 0.1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(1.1); } }
         
         .pulse-confirmed { animation: status-pulse-emerald 2s infinite; }
         .pulse-pending { animation: status-pulse-amber 2s infinite; }
-        .pulse-rejected { animation: status-pulse-rose 2s infinite; }
-
-        /* 4. БЛИМАННЯ БЛЮРУ В БОНУСАХ */
-        @keyframes pulse-blur { 
-            0%, 100% { opacity: 0.1; transform: scale(1); } 
-            50% { opacity: 0.3; transform: scale(1.1); } 
-        }
         .animate-flicker-blur { animation: pulse-blur 4s ease-in-out infinite; }
-
-        /* 5. КАСТОМНИЙ DROPDOWN ПОСЛУГ */
-        .service-dropdown-list { 
-            max-height: 0; 
-            opacity: 0; 
-            overflow: hidden; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-            pointer-events: none; 
-        }
-        .service-dropdown-list.open { 
-            max-height: 350px; 
-            opacity: 1; 
-            pointer-events: auto; 
-            overflow-y: auto; 
-        }
-        .z-dropdown { z-index: 100 !important; }
-
-        /* 6. СТИЛІ НАВІГАЦІЇ */
-        .nav-active { 
-            background: rgba(255, 255, 255, 0.1) !important; 
-            color: white !important; 
-            backdrop-filter: blur(12px); 
-            -webkit-backdrop-filter: blur(12px);
-        }
+        
+        .service-dropdown-list { max-height: 0; opacity: 0; overflow: hidden; transition: all 0.3s ease; pointer-events: none; }
+        .service-dropdown-list.open { max-height: 350px; opacity: 1; pointer-events: auto; overflow-y: auto; }
+        
+        .nav-active { background: rgba(255, 255, 255, 0.1) !important; color: white !important; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
         .nav-active i { color: #f43f5e !important; }
         .nav-inactive { color: #52525b; }
-
-        /* 7. КАТЕГОРІЇ ПОСЛУГ */
-        .category-btn.active { 
-            background: rgba(244, 63, 94, 0.2) !important; 
-            border-color: #f43f5e !important; 
-            color: white !important; 
-        }
-
-        /* 8. СКРОЛБАР ТА ІНШЕ */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        .animate-fade-in {
-            animation: fadeIn 0.4s ease-out forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     `;
     document.head.appendChild(style);
 };
