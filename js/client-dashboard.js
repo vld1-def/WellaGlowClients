@@ -71,13 +71,50 @@ window.updateSidebarUI = function(index) {
         }
     });
 };
+// ГОЛОВНА ФУНКЦІЯ ЗАМІСТЬ ALERT
+window.showGlowToast = function(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast-item';
+    
+    // Вибір іконки та кольору бордера залежно від типу
+    let icon = '<i class="fa-solid fa-circle-check text-emerald-500"></i>';
+    if (type === 'error') {
+        icon = '<i class="fa-solid fa-circle-exclamation text-rose-500"></i>';
+        toast.style.borderLeft = '4px solid #f43f5e';
+    } else if (type === 'info') {
+        icon = '<i class="fa-solid fa-circle-info text-blue-400"></i>';
+        toast.style.borderLeft = '4px solid #3b82f6';
+    } else {
+        toast.style.borderLeft = '4px solid #10b981';
+    }
 
+    toast.innerHTML = `
+        <div class="text-lg">${icon}</div>
+        <div class="flex-1">
+            <p class="text-[11px] font-black uppercase tracking-widest text-white leading-tight">${message}</p>
+        </div>
+    `;
+
+    container.appendChild(toast);
+
+    // Автоматичне видалення через 4 секунди
+    setTimeout(() => {
+        toast.classList.add('toast-out');
+        setTimeout(() => toast.remove(), 500);
+    }, 4000);
+};
 window.logout = () => { localStorage.removeItem('wella_glow_user_id'); window.location.href = 'login.html'; };
 
 // 4. ЗАВАНТАЖЕННЯ ДАНИХ ТА СТАРТ
 document.addEventListener('DOMContentLoaded', async () => {
     injectGlowStyles();
     const scroller = document.getElementById('main-scroller');
+    const container = document.createElement('div');
+    
+    container.id = 'toast-container';
+    container.className = 'toast-container';
+    document.body.appendChild(container);
 
     // СЛУХАЧ СВАЙПІВ
     scroller.addEventListener('scroll', () => {
@@ -389,9 +426,9 @@ window.selectDate = async function(el, date) {
 window.selectTime = (el) => { document.querySelectorAll('.time-btn').forEach(i => i.classList.remove('bg-rose-500', 'text-white')); el.classList.add('bg-rose-500', 'text-white'); window.selectedTimeValue = el.innerText.trim(); window.updateSummary(); };
 window.updateSummary = () => { const d = window.selectedDateValue; document.getElementById('sumDate').innerText = d ? `${d.split('-')[2]}.${d.split('-')[1]} ${window.selectedTimeValue || ''}` : '---'; };
 window.confirmBooking = async function() {
-    if (!window.selectedServiceId || !window.selectedMasterId || !window.selectedDateValue || !window.selectedTimeValue) return alert("Заповніть всі кроки");
+    if (!window.selectedServiceId || !window.selectedMasterId || !window.selectedDateValue || !window.selectedTimeValue) return window.showGlowToast("Заповніть всі кроки", "info");
     const { error } = await window.db.from('appointments').insert([{ client_id: userId, master_id: window.selectedMasterId, service_id: window.selectedServiceId, service_name: window.selectedServiceName, appointment_date: window.selectedDateValue, appointment_time: window.selectedTimeValue, price: window.selectedServicePrice, status: 'waiting' }]);
-    if (!error) { alert("Успішно записано!"); window.location.reload(); }
+    if (!error) {      window.showGlowToast("Запис успішно створено! ✨", "success");      setTimeout(() => window.location.reload(), 2000); // даємо час побачити тост }
 };
 
 // 6. СИСТЕМА ВІДГУКІВ ТА СКАСУВАННЯ
