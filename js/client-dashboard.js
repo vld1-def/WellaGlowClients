@@ -139,15 +139,15 @@ function renderProfileSection(client, history, reviews, upcoming) {
     else if (client.ltv >= 5000) tier = { name: 'GOLD', color: 'amber-500', icon: 'fa-crown' };
 
     container.innerHTML = `
-         <div class="animate-fade-in">
-            <div class="section-header-container">
-                <h2 class="text-2xl font-extrabold text-white tracking-tight leading-none italic-none">Вітаємо, ${firstName}! ✨</h2>
-                <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2">Твій день для краси сьогодні</p>
-            </div>
+        <div class="space-y-8 animate-fade-in">
+            <header class="flex justify-between items-center mb-10">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-white tracking-tight leading-none italic-none">Вітаємо, ${firstName}! ✨</h2>
+                    <p class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest mt-2 leading-none italic-none">Твій день для краси сьогодні</p>
+                </div>
                 <button onclick="logout()" class="text-zinc-700 hover:text-rose-500 transition"><i class="fa-solid fa-power-off"></i></button>
             </header>
 
-            <!-- КАРТКА ЛОЯЛЬНОСТІ -->
             <div class="glass-panel p-6 rounded-[2rem] border-t-4 border-t-${tier.color} relative overflow-hidden transition-all duration-500">
                 <div class="absolute -right-10 -top-10 w-32 h-32 bg-${tier.color}/10 rounded-full blur-3xl"></div>
                 <div class="flex justify-between items-start mb-10">
@@ -157,7 +157,6 @@ function renderProfileSection(client, history, reviews, upcoming) {
                     </div>
                     <i class="fa-solid ${tier.icon} text-${tier.color} text-xl shadow-lg"></i>
                 </div>
-                
                 <div class="flex justify-between items-end">
                     <p class="text-3xl font-black text-white leading-none italic-none">${client.bonuses} <span class="text-xs font-bold text-zinc-600 ml-1 italic-none">балів</span></p>
                     <div class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/5">
@@ -166,12 +165,10 @@ function renderProfileSection(client, history, reviews, upcoming) {
                 </div>
             </div>
 
-            <!-- ОРИГІНАЛЬНА КНОПКА ЗАПИСУ -->
-            <button onclick="window.scrollToPage(1)" class="neo-gradient w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-white shadow-xl shadow-rose-500/10 mt-2 transition active:scale-95 italic-none">
+            <button onclick="window.scrollToPage(1)" class="neo-gradient w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-white shadow-xl shadow-rose-500/10 transition active:scale-95 italic-none">
                 Записатись зараз
             </button>
 
-            <!-- Найближчі візити -->
             <div class="space-y-4">
                 ${upcoming.map(app => {
                     let st = { text: 'На розгляді', color: 'bg-amber-500', pulse: 'pulse-pending' };
@@ -200,12 +197,11 @@ function renderProfileSection(client, history, reviews, upcoming) {
                 }).join('')}
             </div>
 
-            <!-- Історія візитів -->
             <div class="glass-panel p-8 rounded-[2.5rem]">
                 <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none italic-none">Історія моїх візитів</h4>
                 <div class="space-y-10 italic-none">
                     ${history.map(h => {
-                        const review = reviews.find(r => r.appointment_id === h.id);
+                        const clientReview = reviews.find(r => r.appointment_id === h.id);
                         return `
                         <div class="review-container flex flex-col italic-none">
                             <div class="flex items-center justify-between gap-4 italic-none">
@@ -218,21 +214,21 @@ function renderProfileSection(client, history, reviews, upcoming) {
                                         <p class="text-[10px] text-zinc-600 mt-1 font-medium italic-none">Майстер: ${h.staff?.name || 'Майстер'}</p>
                                     </div>
                                 </div>
-                                <div class="flex-1 flex justify-center">
-                                    ${review ? `
-                                        <div class="flex flex-col items-center gap-1 italic-none">
-                                            <div class="flex gap-0.5 text-amber-500 text-[8px] italic-none">
-                                                ${'<i class="fa-solid fa-star"></i>'.repeat(review.rating)}
-                                            </div>
-                                            <p class="text-[9px] text-zinc-500 font-medium italic-none truncate w-full text-center px-2">${truncate(review.comment, 20)}</p>
+                                <div class="flex-1 flex flex-col items-center italic-none">
+                                    ${clientReview ? `
+                                        <div class="flex gap-0.5 text-amber-500 text-[8px] mb-1 italic-none">
+                                            ${'<i class="fa-solid fa-star"></i>'.repeat(clientReview.rating)}
                                         </div>
+                                        <p class="text-[9px] text-zinc-500 font-medium italic-none truncate w-full text-center px-2">
+                                            ${truncate(clientReview.comment, 20)}
+                                        </p>
                                     ` : `
                                         <div class="flex gap-1.5 stars-row italic-none" onmouseleave="window.resetStars(this)">
-                                            ${[1, 2, 3, 4, 5].map(star => `<i class="fa-solid fa-star text-zinc-800 text-[10px] cursor-pointer transition duration-200" onmouseenter="window.hoverStars(this, ${star})" onclick="window.showReviewInput(this, ${star}, '${h.id}')"></i>`).join('')}
+                                            ${[1, 2, 3, 4, 5].map(star => `<i class="fa-solid fa-star text-zinc-800 text-[10px] cursor-pointer" onmouseenter="window.hoverStars(this, ${star})" onclick="window.showReviewInput(this, ${star}, '${h.id}')"></i>`).join('')}
                                         </div>
                                     `}
                                 </div>
-                                <button onclick="window.repeatBooking('${h.service_id}', '${h.master_id}')" class="px-4 py-2 border border-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition italic-none shrink-0">Повторити</button>
+                                <button onclick="window.repeatBooking('${h.service_id}', '${h.master_id}')" class="px-4 py-2 border border-white/5 rounded-xl text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-white hover:bg-white/5 transition italic-none shrink-0">Повторити</button>
                             </div>
                             <div class="review-input-block hidden mt-3 pt-3 border-t border-white/5 italic-none">
                                 <div class="quick-replies hidden flex flex-wrap gap-2 mb-3 italic-none">
@@ -256,18 +252,26 @@ function renderBookingSection() {
     const container = document.getElementById('page-booking');
     container.innerHTML = `
         <div class="space-y-6 animate-fade-in">
-            <h2 class="text-2xl font-black text-white uppercase tracking-tighter mb-8">Запис на візит</h2>
-            
-            <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                ${['all', 'Hair', 'Nail', 'Makeup'].map(cat => `<button onclick="window.filterByCategory('${cat}', this)" class="category-btn ${cat === 'all' ? 'active' : ''} px-4 py-2 rounded-xl border border-white/5 bg-white/2 text-[9px] font-black uppercase tracking-widest transition shrink-0">${cat === 'all' ? 'Всі' : cat}</button>`).join('')}
+            <header class="flex justify-between items-center mb-10">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-white tracking-tight leading-none italic-none uppercase">Запис на візит</h2>
+                    <p class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest mt-2 leading-none italic-none">Створи свій ідеальний образ</p>
+                </div>
+            </header>
+
+            <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar -mx-5 px-5">
+                <button onclick="window.filterByCategory('all', this)" class="category-btn active px-5 py-2.5 rounded-xl border border-white/5 bg-white/2 text-[10px] font-black uppercase tracking-widest transition shrink-0 italic-none">Всі</button>
+                <button onclick="window.filterByCategory('Hair', this)" class="category-btn px-5 py-2.5 rounded-xl border border-white/5 bg-white/2 text-[10px] font-black uppercase tracking-widest transition shrink-0 italic-none text-zinc-500">Волосся</button>
+                <button onclick="window.filterByCategory('Nail', this)" class="category-btn px-5 py-2.5 rounded-xl border border-white/5 bg-white/2 text-[10px] font-black uppercase tracking-widest transition shrink-0 italic-none text-zinc-500">Манікюр</button>
+                <button onclick="window.filterByCategory('Makeup', this)" class="category-btn px-5 py-2.5 rounded-xl border border-white/5 bg-white/2 text-[10px] font-black uppercase tracking-widest transition shrink-0 italic-none text-zinc-500">Макіяж</button>
             </div>
 
-            <div class="glass-panel p-5 rounded-[2rem] relative z-dropdown">
-                <h4 class="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-4">1. Послуга</h4>
+            <div class="glass-panel p-6 rounded-[2rem] relative z-dropdown">
+                <h4 class="text-xs font-black text-rose-500 uppercase tracking-widest mb-6 leading-none italic-none">1. Оберіть послугу</h4>
                 <div class="relative">
-                    <div onclick="window.toggleServiceDropdown()" class="input-dark w-full flex justify-between items-center cursor-pointer">
-                        <span id="selectedServiceText" class="text-zinc-400 text-xs">Оберіть процедуру...</span>
-                        <i class="fa-solid fa-chevron-down text-[10px] text-zinc-600" id="dropdownArrow"></i>
+                    <div onclick="window.toggleServiceDropdown()" id="serviceSelector" class="input-dark w-full flex justify-between items-center cursor-pointer border border-white/10 hover:border-rose-500/50 transition">
+                        <span id="selectedServiceText" class="italic-none text-zinc-400">Оберіть процедуру...</span>
+                        <i class="fa-solid fa-chevron-down text-[10px] text-zinc-600 transition-transform duration-300" id="dropdownArrow"></i>
                     </div>
                     <div id="serviceDropdownList" class="service-dropdown-list glass-panel absolute w-full mt-2 rounded-2xl border border-white/10 bg-[#0a0a0b] shadow-2xl">
                         <div id="servicesItemsContainer" class="p-2 space-y-1"></div>
@@ -275,26 +279,27 @@ function renderBookingSection() {
                 </div>
             </div>
 
-            <div id="mastersSection" class="glass-panel p-5 rounded-[2rem] opacity-30 pointer-events-none transition-all duration-500">
-                <h4 class="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-4">2. Майстер</h4>
-                <div class="grid grid-cols-2 gap-3" id="mastersGrid"></div>
+            <div id="mastersSection" class="glass-panel p-6 rounded-[2rem] opacity-30 pointer-events-none transition-all duration-500 relative z-step-2">
+                <h4 class="text-xs font-black text-rose-500 uppercase tracking-widest mb-6 leading-none italic-none">2. Оберіть майстра</h4>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4" id="mastersGrid"></div>
             </div>
 
-            <div id="calendarSection" class="glass-panel p-5 rounded-[2rem] opacity-30 pointer-events-none transition-all duration-500">
-                <h4 class="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-4">3. Дата та час</h4>
-                <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-center text-[10px]"></div>
-                <div id="timeSlots" class="grid grid-cols-3 gap-2 mt-6"></div>
+            <div id="calendarSection" class="glass-panel p-6 rounded-[2rem] opacity-30 pointer-events-none transition-all duration-500 relative z-step-3">
+                <h4 class="text-xs font-black text-rose-500 uppercase tracking-widest mb-6 leading-none italic-none">3. Дата та час</h4>
+                <div id="calendarGrid" class="grid grid-cols-7 gap-2 text-center italic-none"></div>
+                <div id="timeSlots" class="grid grid-cols-4 gap-2 mt-8 italic-none"></div>
             </div>
 
-            <div class="glass-panel p-6 rounded-[2.5rem] border-t-4 border-t-rose-500 shadow-2xl">
-                <div class="space-y-3 mb-6">
-                    <div class="flex justify-between text-[10px] font-bold"><span class="text-zinc-500 uppercase">Послуга</span><span id="sumService" class="text-white">---</span></div>
-                    <div class="flex justify-between text-[10px] font-bold"><span class="text-zinc-500 uppercase">Майстер</span><span id="sumMaster" class="text-white">---</span></div>
-                    <div class="flex justify-between text-[10px] font-bold"><span class="text-zinc-500 uppercase">Дата</span><span id="sumDate" class="text-white">---</span></div>
-                    <div class="h-px bg-white/5 my-2"></div>
-                    <div class="flex justify-between items-center"><span class="text-xs font-black text-white uppercase">Сума</span><span id="sumPrice" class="text-xl font-black text-emerald-400">₴0</span></div>
+            <div class="glass-panel p-8 rounded-[2.5rem] border-t-4 border-t-rose-500 shadow-2xl">
+                <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 text-center leading-none italic-none">Ваше бронювання</h4>
+                <div class="space-y-4 mb-8 italic-none">
+                    <div class="flex justify-between text-[11px] font-bold"><span class="text-zinc-500 uppercase">Послуга</span><span id="sumService" class="text-white text-right">---</span></div>
+                    <div class="flex justify-between text-[11px] font-bold"><span class="text-zinc-500 uppercase">Майстер</span><span id="sumMaster" class="text-white text-right">---</span></div>
+                    <div class="flex justify-between text-[11px] font-bold"><span class="text-zinc-500 uppercase">Дата</span><span id="sumDate" class="text-white">---</span></div>
+                    <div class="h-px bg-white/5 my-4"></div>
+                    <div class="flex justify-between items-center"><span class="text-sm font-black text-white uppercase tracking-tighter">До сплати</span><span id="sumPrice" class="text-2xl font-black text-emerald-400">₴0</span></div>
                 </div>
-                <button onclick="window.confirmBooking()" class="neo-gradient w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-white">Записатись</button>
+                <button onclick="window.confirmBooking()" class="neo-gradient w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] text-white shadow-xl transition active:scale-95 italic-none">Підтвердити запис</button>
             </div>
         </div>
     `;
@@ -305,95 +310,62 @@ function renderBonusesSection(client, programs, bonusHistory, visitHistory) {
     const container = document.getElementById('page-bonuses');
     const balance = client?.bonuses || 0;
 
-    // Допоміжна функція для підрахунку візитів за категорією
     const countVisits = (category) => {
-        if (!category) return visitHistory.length; // Якщо категорія не вказана, рахуємо всі візити
+        if (!category) return visitHistory.length;
         return visitHistory.filter(h => h.services?.category === category).length;
     };
 
     container.innerHTML = `
-       <div class="animate-fade-in">
-            <div class="section-header-container">
-                <h2 class="text-2xl font-extrabold text-white uppercase tracking-tighter leading-none italic-none">Бонусна програма</h2>
-                <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2">Твої накопичення та привілеї</p>
+        <div class="space-y-8 animate-fade-in">
+            <div class="mt-4">
+                <h2 class="text-xl font-extrabold text-white uppercase tracking-tighter leading-none italic-none">Бонусна програма</h2>
+                <p class="text-zinc-500 text-[9px] font-bold uppercase tracking-widest mt-2 leading-none italic-none">Твої накопичення та привілеї</p>
             </div>
             
-            <!-- Баланс -->
             <div class="glass-panel p-8 rounded-[2rem] border-t-2 border-t-rose-500 relative overflow-hidden shadow-2xl">
                 <div class="absolute -right-10 -top-10 w-32 h-32 bg-rose-500/10 rounded-full blur-3xl animate-flicker-blur"></div>
                 <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-1 italic-none">Доступно зараз</p>
                 <h3 class="text-5xl font-black text-white tracking-tighter italic-none">${balance.toLocaleString()}</h3>
             </div>
 
-            <!-- Список привілеїв (Активні та Недоступні) -->
             <div class="space-y-4">
                 <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-2 italic-none">Статус привілеїв</h4>
-                
                 ${programs.map(p => {
                     const currentVisits = countVisits(p.service_category);
                     const isLocked = currentVisits < p.required_visits;
                     const alreadyGot = bonusHistory.some(t => t.reason.toUpperCase() === p.name.toUpperCase());
-
-                    let statusText = 'Активний';
-                    let statusClass = 'text-emerald-500 bg-emerald-500/10';
-                    let icon = '<i class="fa-solid fa-circle-check text-emerald-500 text-[10px]"></i>';
-
-                    if (p.program_type === 'once' && alreadyGot) {
-                        statusText = 'Нараховано';
-                        statusClass = 'text-blue-400 bg-blue-400/10';
-                    } else if (isLocked) {
-                        statusText = 'Недоступно';
-                        statusClass = 'text-zinc-600 bg-zinc-800';
-                        icon = '<i class="fa-solid fa-lock text-zinc-700 text-[10px]"></i>';
-                    }
+                    let stText = 'Активний', stClass = 'text-emerald-500 bg-emerald-500/10', icon = '<i class="fa-solid fa-circle-check text-emerald-500 text-[10px]"></i>';
+                    if (p.program_type === 'once' && alreadyGot) { stText = 'Нараховано'; stClass = 'text-blue-400 bg-blue-400/10'; }
+                    else if (isLocked) { stText = 'Недоступно'; stClass = 'text-zinc-600 bg-zinc-800'; icon = '<i class="fa-solid fa-lock text-zinc-700 text-[10px]"></i>'; }
 
                     return `
                     <div class="glass-panel p-5 rounded-[2rem] border border-white/5 relative ${isLocked ? 'opacity-40 grayscale' : ''} transition-all duration-500">
                         <div class="flex justify-between items-start mb-4">
-                            <span class="px-2 py-1 rounded text-[7px] font-black uppercase tracking-widest ${statusClass} italic-none">
-                                ${statusText}
-                            </span>
+                            <span class="px-2 py-1 rounded text-[7px] font-black uppercase tracking-widest ${stClass} italic-none">${stText}</span>
                             ${icon}
                         </div>
                         <p class="text-xs font-black text-white uppercase mb-1 italic-none">${p.name}</p>
                         <p class="text-[10px] text-zinc-500 leading-relaxed italic-none">${p.description}</p>
-                        
-                        ${isLocked ? `
-                            <div class="mt-4 space-y-2">
-                                <div class="flex justify-between text-[9px] font-black uppercase text-rose-500 italic-none">
-                                    <span>Прогрес</span>
-                                    <span>${currentVisits} / ${p.required_visits} візитів</span>
-                                </div>
-                                <div class="h-1 w-full bg-zinc-900 rounded-full overflow-hidden">
-                                    <div class="h-full bg-rose-500" style="width: ${(currentVisits / p.required_visits) * 100}%"></div>
-                                </div>
-                            </div>
-                        ` : ''}
+                        ${isLocked ? `<div class="mt-4 space-y-2"><div class="flex justify-between text-[9px] font-black uppercase text-rose-500 italic-none"><span>Прогрес</span><span>${currentVisits}/${p.required_visits} візитів</span></div><div class="h-1 w-full bg-zinc-900 rounded-full overflow-hidden"><div class="h-full bg-rose-500" style="width: ${(currentVisits/p.required_visits)*100}%"></div></div></div>` : ''}
                     </div>`;
                 }).join('')}
             </div>
 
-            <!-- Історія операцій -->
-            <div class="space-y-4">
+            <div class="space-y-4 pb-10">
                 <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-2 italic-none">Історія операцій</h4>
-                <div class="space-y-3">
-                    ${bonusHistory.length > 0 ? bonusHistory.map(t => `
-                        <div class="flex items-center justify-between p-4 bg-white/2 rounded-2xl border border-white/5 italic-none transition">
-                            <div class="flex items-center gap-4 italic-none">
-                                <div class="w-10 h-10 rounded-xl bg-zinc-900 border border-white/5 flex items-center justify-center italic-none">
-                                    <i class="fa-solid ${t.amount > 0 ? 'fa-plus text-emerald-500' : 'fa-minus text-rose-500'} text-[10px]"></i>
-                                </div>
-                                <div class="italic-none">
-                                    <p class="text-xs font-bold text-white tracking-tight italic-none leading-none">${t.reason}</p>
-                                    <p class="text-[9px] text-zinc-600 font-black uppercase mt-1.5 italic-none leading-none">${new Date(t.created_at).toLocaleDateString('uk-UA')}</p>
-                                </div>
+                ${bonusHistory.length > 0 ? bonusHistory.map(t => `
+                    <div class="flex items-center justify-between p-4 bg-white/2 rounded-2xl border border-white/5 italic-none transition">
+                        <div class="flex items-center gap-4 italic-none">
+                            <div class="w-10 h-10 rounded-xl bg-zinc-900 border border-white/5 flex items-center justify-center italic-none">
+                                <i class="fa-solid ${t.amount > 0 ? 'fa-plus text-emerald-500' : 'fa-minus text-rose-500'} text-[10px]"></i>
                             </div>
-                            <p class="text-sm font-black ${t.amount > 0 ? 'text-emerald-400' : 'text-zinc-500'} italic-none">
-                                ${t.amount > 0 ? '+' : ''}${t.amount}
-                            </p>
+                            <div class="italic-none leading-none">
+                                <p class="text-xs font-bold text-white tracking-tight italic-none">${t.reason}</p>
+                                <p class="text-[9px] text-zinc-600 font-black uppercase mt-1.5 italic-none">${new Date(t.created_at).toLocaleDateString('uk-UA')}</p>
+                            </div>
                         </div>
-                    `).join('') : '<p class="text-zinc-700 text-[10px] font-black uppercase text-center py-10 italic-none">Транзакцій поки немає</p>'}
-                </div>
+                        <p class="text-sm font-black ${t.amount > 0 ? 'text-emerald-400' : 'text-zinc-500'} italic-none">${t.amount > 0 ? '+' : ''}${t.amount}</p>
+                    </div>`).join('') : '<p class="text-zinc-700 text-[10px] font-black uppercase text-center py-10 italic-none">Порожньо</p>'}
             </div>
         </div>
     `;
