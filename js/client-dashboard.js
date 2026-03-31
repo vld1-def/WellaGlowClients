@@ -138,6 +138,20 @@ button, span, i {
     border-color: rgba(255, 255, 255, 0.05) !important;
     color: #52525b !important; /* Сірий текст zinc-500 */
 }
+.fa-star.text-amber-500 {
+    color: #f59e0b !important; /* Золотий */
+    opacity: 1 !important;
+}
+
+.fa-star.text-zinc-800 {
+    color: #27272a !important; /* Темно-сірий */
+}
+
+/* Прибираємо будь-яке блимання конкретно для іконок зірок */
+.fa-star {
+    transition: color 0.1s ease !important;
+    -webkit-tap-highlight-color: transparent !important;
+}
     `;
     document.head.appendChild(style);
 };
@@ -604,12 +618,69 @@ window.confirmBooking = async function() {
 };
 
 // 6. СИСТЕМА ВІДГУКІВ ТА СКАСУВАННЯ
-window.hoverStars = (el, r) => { el.closest('.stars-row').querySelectorAll('.fa-star').forEach((s, i) => s.classList.toggle('text-amber-500', i < r)); };
-window.resetStars = (row) => { const inp = row.closest('.review-container').querySelector('.review-input-block'); if (inp.classList.contains('hidden')) row.querySelectorAll('.fa-star').forEach(s => s.classList.remove('text-amber-500')); };
-window.showReviewInput = (el, r, id) => { 
-    const parent = el.closest('.review-container'); const ib = parent.querySelector('.review-input-block'); const qr = parent.querySelector('.quick-replies');
-    ib.classList.remove('hidden'); ib.dataset.rating = r; if (r >= 4) qr.classList.remove('hidden'); else qr.classList.add('hidden');
-    parent.querySelectorAll('.fa-star').forEach((s, i) => s.classList.toggle('text-amber-500', i < r));
+window.hoverStars = (el, r) => {
+    const row = el.closest('.stars-row');
+    const stars = row.querySelectorAll('.fa-star');
+    stars.forEach((s, i) => {
+        if (i < r) {
+            s.classList.add('text-amber-500');
+            s.classList.remove('text-zinc-800');
+        } else {
+            s.classList.remove('text-amber-500');
+            s.classList.add('text-zinc-800');
+        }
+    });
+};
+
+window.resetStars = (row) => {
+    const parent = row.closest('.review-container');
+    const inputBlock = parent.querySelector('.review-input-block');
+    
+    // Якщо клієнт вже вибрав оцінку (інпут відкритий), не скидаємо колір
+    if (!inputBlock.classList.contains('hidden')) {
+        const r = parseInt(inputBlock.dataset.rating);
+        row.querySelectorAll('.fa-star').forEach((s, i) => {
+            if (i < r) {
+                s.classList.add('text-amber-500');
+                s.classList.remove('text-zinc-800');
+            } else {
+                s.classList.remove('text-amber-500');
+                s.classList.add('text-zinc-800');
+            }
+        });
+        return;
+    }
+
+    // Якщо не вибрав — гасимо всі
+    row.querySelectorAll('.fa-star').forEach(s => {
+        s.classList.remove('text-amber-500');
+        s.classList.add('text-zinc-800');
+    });
+};
+
+window.showReviewInput = (el, r, id) => {
+    const parent = el.closest('.review-container');
+    const ib = parent.querySelector('.review-input-block');
+    const qr = ib.querySelector('.quick-replies');
+    
+    ib.classList.remove('hidden');
+    ib.dataset.rating = r;
+    
+    // Показуємо швидкі відповіді для 4-5 зірок
+    if (r >= 4 && qr) qr.classList.remove('hidden');
+    else if (qr) qr.classList.add('hidden');
+    
+    // Фіксуємо колір вибраних зірок
+    const stars = parent.querySelectorAll('.fa-star');
+    stars.forEach((s, i) => {
+        if (i < r) {
+            s.classList.add('text-amber-500');
+            s.classList.remove('text-zinc-800');
+        } else {
+            s.classList.remove('text-amber-500');
+            s.classList.add('text-zinc-800');
+        }
+    });
 };
 window.setQuickText = (btn, t) => { btn.closest('.review-input-block').querySelector('input').value = t; };
 window.submitReview = async (btn, aid, mid) => {
