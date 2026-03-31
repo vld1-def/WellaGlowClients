@@ -85,6 +85,7 @@ const injectGlowStyles = () => {
                 border-color: rgba(255, 255, 255, 0.05) !important;
             }
         }
+        
         /* Анімації та інші стилі */
         .service-dropdown-list { max-height: 0; opacity: 0; overflow: hidden; transition: all 0.3s ease; pointer-events: none; }
         .service-dropdown-list.open { max-height: 350px; opacity: 1; pointer-events: auto; overflow-y: auto; }
@@ -92,6 +93,31 @@ const injectGlowStyles = () => {
         .nav-active i { color: #f43f5e !important; }
         .nav-inactive { color: #52525b; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        /* Додай це всередину блоку style.textContent у функцію injectGlowStyles */
+
+/* 1. Вимикаємо системне підсвічування при кліку на мобільних (iOS/Android) */
+* {
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-touch-callout: none !important;
+}
+
+/* 2. Вимикаємо стандартний контур фокусу браузера */
+button:focus, a:focus, div:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* 3. Примусово прибираємо будь-які активні стани, які можуть давати блік */
+.nav-inactive:active, .nav-active:active {
+    background-color: transparent !important;
+    opacity: 1 !important;
+}
+
+/* 4. Забороняємо виділення тексту при випадковому довгому натисканні */
+button, span, i {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
         @keyframes toast-in { from { opacity: 0; transform: translateY(-40px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .toast-container { position: fixed; top: calc(20px + var(--sat)); left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 350px; }
         .toast-item { background: rgba(20, 20, 22, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-left: 4px solid #10b981; padding: 14px; border-radius: 18px; color: white; display: flex; align-items: center; gap: 12px; animation: toast-in 0.5s forwards; }
