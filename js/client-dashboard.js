@@ -809,141 +809,47 @@ window.setQuickText = function(btn, text) {
     const input = parent.querySelector('input');
     input.value = text;
 };
-window.renderBonusesSection = async function() {
-    window.updateSidebar('bonuses');
-    const main = document.querySelector('main');
-    const userId = localStorage.getItem('wella_glow_user_id');
-
-    // 1. Отримуємо дані (Клієнт, Транзакції, Програми, Історія візитів для підрахунку)
-    const [clientRes, bonusHistoryRes, programsRes, visitHistoryRes] = await Promise.all([
-        window.db.from('clients').select('*').eq('id', userId).single(),
-        window.db.from('bonus_history').select('*').eq('client_id', userId).order('created_at', { ascending: false }),
-        window.db.from('bonus_programs').select('*').eq('is_active', true).order('required_visits', { ascending: true }),
-        window.db.from('appointment_history').select('*, services(category)').eq('client_id', userId)
-    ]);
-
-    const client = clientRes.data;
-    const bonusHistory = bonusHistoryRes.data || [];
-    const programs = programsRes.data || [];
-    const visitHistory = visitHistoryRes.data || [];
-
-    // 2. Рахуємо KPI бонусів
+function renderBonusesSection(client, programs, bonusHistory, visitHistory) {
+    const container = document.getElementById('page-bonuses');
+    
     const balance = client?.bonuses || 0;
-    const totalEarned = bonusHistory.filter(t => t.amount > 0).reduce((sum, t) => sum + t.amount, 0);
-    const totalSpent = Math.abs(bonusHistory.filter(t => t.amount < 0).reduce((sum, t) => sum + t.amount, 0));
-
-    // 3. Функція для підрахунку візитів за категорією
-    const countVisits = (category = null) => {
-        if (!category) return visitHistory.length;
-        return visitHistory.filter(h => h.services?.category === category).length;
-    };
-
-    main.innerHTML = `
-        <header class="flex justify-between items-center mb-10">
-            <div>
-                <h2 class="text-2xl font-extrabold text-white tracking-tight leading-none italic-none uppercase">Бонусна програма</h2>
-                <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2 leading-none italic-none">Твої накопичення та привілеї</p>
+    
+    container.innerHTML = `
+        <div class="space-y-8 animate-fade-in">
+            <!-- Заголовок -->
+            <div class="mt-4">
+                <h2 class="text-3xl font-black text-white uppercase tracking-tighter leading-none">Бонусна<br>програма</h2>
+                <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2">Твої накопичення та привілеї</p>
             </div>
-        </header>
 
-         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <!-- ЦЯ КАРТКА ВИДИМА ЗАВЖДИ -->
-            <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-rose-500 shadow-xl relative overflow-hidden">
+            <!-- Баланс (великий та чіткий) -->
+            <div class="glass-panel p-8 rounded-[2.5rem] relative overflow-hidden border-t-2 border-t-rose-500">
                 <div class="absolute -right-10 -top-10 w-32 h-32 bg-rose-500/10 rounded-full blur-3xl animate-flicker-blur"></div>
-                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Доступно зараз</p>
-                <h3 class="text-3xl font-black text-white italic-none tracking-tighter">${balance.toLocaleString()}</h3>
+                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-1">Доступно зараз</p>
+                <h3 class="text-5xl font-black text-white tracking-tighter">${balance.toLocaleString()}</h3>
             </div>
-            
-            <!-- ЦІ ДВІ КАРТКИ СХОВАНІ НА МОБІЛЬНИХ (hidden), АЛЕ ВИДИМІ НА ДЕСКТОПІ (md:block) -->
-            <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-emerald-500 hidden md:block">
-                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Нараховано всього</p>
-                <h3 class="text-3xl font-black text-white italic-none tracking-tighter">${totalEarned.toLocaleString()}</h3>
-            </div>
-            
-            <div class="glass-panel p-6 rounded-[2rem] border-t-2 border-t-zinc-700 hidden md:block">
-                <p class="text-zinc-500 text-[9px] font-black uppercase tracking-widest mb-2 italic-none">Витрачено балів</p>
-                <h3 class="text-3xl font-black text-zinc-300 italic-none tracking-tighter">${totalSpent.toLocaleString()}</h3>
-            </div>
-        </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <!-- ЛІВА КОЛОНКА: ПРОГРАМИ ВІЗИТІВ -->
-            <div class="lg:col-span-1 space-y-6">
-                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-4 italic-none">Статус привілеїв</h4>
-                
+            <!-- Список програм -->
+            <div class="space-y-4">
+                <h4 class="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-2">Статус привілеїв</h4>
                 ${programs.map(p => {
-                    const currentVisits = countVisits(p.service_category);
-                    const isLocked = currentVisits < p.required_visits;
-                    
-                    let statusText = 'Активний';
-                    let statusClass = 'text-emerald-500 bg-emerald-500/10';
-
-                    // Перевірка на разовий бонус (напр. Welcome)
                     const alreadyGot = bonusHistory.some(t => t.reason.toUpperCase() === p.name.toUpperCase());
-                    
-                    if (p.program_type === 'once' && alreadyGot) {
-                        statusText = 'Нараховано';
-                        statusClass = 'text-blue-400 bg-blue-400/10';
-                    } else if (isLocked) {
-                        statusText = 'Недоступно';
-                        statusClass = 'text-zinc-600 bg-zinc-800';
-                    }
+                    const status = alreadyGot ? { text: 'Нараховано', class: 'text-blue-400 bg-blue-400/10' } : { text: 'Активний', class: 'text-emerald-500 bg-emerald-500/10' };
 
                     return `
-                    <div class="glass-panel p-6 rounded-[2.5rem] relative overflow-hidden border border-white/5 ${isLocked ? 'opacity-40 grayscale' : ''} transition-all duration-500 group">
+                    <div class="glass-panel p-6 rounded-[2rem] border border-white/5 relative">
                         <div class="flex justify-between items-start mb-4">
-                            <span class="px-2 py-1 rounded text-[8px] font-black uppercase tracking-widest ${statusClass} italic-none">
-                                ${statusText}
-                            </span>
-                            ${isLocked ? '<i class="fa-solid fa-lock text-zinc-700 text-[10px]"></i>' : '<i class="fa-solid fa-circle-check text-emerald-500 text-[10px]"></i>'}
+                            <span class="px-2 py-1 rounded text-[8px] font-black uppercase tracking-widest ${status.class}">${status.text}</span>
+                            <i class="fa-solid fa-circle-check text-emerald-500 text-[10px]"></i>
                         </div>
-                        <p class="text-xs font-black text-white uppercase tracking-tight mb-2 italic-none">${p.name}</p>
-                        <p class="text-[11px] text-zinc-500 font-medium leading-relaxed italic-none">${p.description}</p>
-                        
-                        ${isLocked ? `
-                            <div class="mt-4 space-y-2">
-                                <div class="flex justify-between text-[9px] font-black uppercase text-rose-500 italic-none">
-                                    <span>Прогрес</span>
-                                    <span>${currentVisits} / ${p.required_visits} візитів</span>
-                                </div>
-                                <div class="h-1 w-full bg-zinc-900 rounded-full overflow-hidden">
-                                    <div class="h-full bg-rose-500" style="width: ${(currentVisits / p.required_visits) * 100}%"></div>
-                                </div>
-                            </div>
-                        ` : ''}
-                    </div>
-                    `;
+                        <h5 class="text-sm font-black text-white uppercase tracking-tight mb-1">${p.name}</h5>
+                        <p class="text-[11px] text-zinc-500 font-medium leading-relaxed">${p.description}</p>
+                    </div>`;
                 }).join('')}
-            </div>
-
-            <!-- ПРАВА КОЛОНКА: ІСТОРІЯ ТРАНЗАКЦІЙ -->
-            <div class="lg:col-span-2">
-                <div class="glass-panel p-8 rounded-[3rem] shadow-2xl">
-                    <h4 class="text-xs font-black text-white uppercase tracking-widest mb-8 leading-none italic-none">Історія операцій</h4>
-                    <div class="space-y-4">
-                        ${bonusHistory.length > 0 ? bonusHistory.map(t => `
-                            <div class="flex items-center justify-between p-4 bg-white/2 rounded-2xl border border-white/5 group hover:border-white/10 transition">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 rounded-xl bg-zinc-900 border border-white/5 flex items-center justify-center">
-                                        <i class="fa-solid ${t.amount > 0 ? 'fa-plus text-emerald-500' : 'fa-minus text-rose-500'} text-[10px]"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs font-bold text-white tracking-tight italic-none">${t.reason}</p>
-                                        <p class="text-[9px] text-zinc-600 font-black uppercase mt-1 tracking-tighter italic-none">${new Date(t.created_at).toLocaleDateString('uk-UA')} • ${new Date(t.created_at).toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'})}</p>
-                                    </div>
-                                </div>
-                                <p class="text-sm font-black ${t.amount > 0 ? 'text-emerald-400' : 'text-zinc-500'} italic-none">
-                                    ${t.amount > 0 ? '+' : ''}${t.amount}
-                                </p>
-                            </div>
-                        `).join('') : '<p class="text-zinc-700 text-[10px] font-black uppercase text-center py-20 italic-none">Транзакцій поки немає</p>'}
-                    </div>
-                </div>
             </div>
         </div>
     `;
-};
+}
 const dropdownStyle = document.createElement('style');
 dropdownStyle.textContent = `
     .service-dropdown-list {
@@ -1032,15 +938,14 @@ window.selectServiceUI = function(id, name, price, preMasterId = null) {
     // ТУТ ВИПРАВЛЕНО: передаємо ID напряму
     window.filterMastersByService(id, preMasterId);
 };
-// --- 1. ЛОГІКА ПЕРЕМИКАННЯ СТОРІНОК (SCROLL) ---
+// --- 1. ЛОГІКА СКРОЛУ ---
 window.scrollToPage = function(index) {
     const scroller = document.getElementById('main-scroller');
-    const width = scroller.clientWidth;
-    scroller.scrollTo({ left: width * index, behavior: 'smooth' });
-    
-    // Оновлюємо підсвітку кнопок
-    const pages = ['profile', 'booking', 'bonuses'];
-    window.updateSidebar(pages[index]);
+    scroller.scrollTo({
+        left: window.innerWidth * index,
+        behavior: 'smooth'
+    });
+    window.updateNav(index);
 };
 
 // --- 2. ЗАВАНТАЖЕННЯ ВСІХ ДАНИХ ПРИ СТАРТІ ---
