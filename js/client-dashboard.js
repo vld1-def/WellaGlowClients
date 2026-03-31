@@ -439,6 +439,7 @@ function renderBookingSection() {
 function renderBonusesSection(client, programs, bonusHistory, visitHistory) {
     const container = document.getElementById('page-bonuses');
     const balance = client?.bonuses || 0;
+    const countVisits = (cat) => visitHistory.filter(v => v.services?.category === cat).length;
     const activeProgs = [], lockedProgs = [];
     programs.forEach(p => {
         const count = countVisits(p.service_category);
