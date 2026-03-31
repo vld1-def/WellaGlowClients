@@ -1032,3 +1032,73 @@ window.selectServiceUI = function(id, name, price, preMasterId = null) {
     // ТУТ ВИПРАВЛЕНО: передаємо ID напряму
     window.filterMastersByService(id, preMasterId);
 };
+// --- 1. ЛОГІКА ПЕРЕМИКАННЯ СТОРІНОК (SCROLL) ---
+window.scrollToPage = function(index) {
+    const scroller = document.getElementById('main-scroller');
+    const width = scroller.clientWidth;
+    scroller.scrollTo({ left: width * index, behavior: 'smooth' });
+    
+    // Оновлюємо підсвітку кнопок
+    const pages = ['profile', 'booking', 'bonuses'];
+    window.updateSidebar(pages[index]);
+};
+
+// --- 2. ЗАВАНТАЖЕННЯ ВСІХ ДАНИХ ПРИ СТАРТІ ---
+document.addEventListener('DOMContentLoaded', async () => {
+    const userId = localStorage.getItem('wella_glow_user_id');
+    if (!userId) return (window.location.href = 'login.html');
+
+    // Отримуємо ВСЕ одним махом для швидкості
+    const [client, history, reviews, upcoming, services, masters, bonusPrograms, bonusHistory] = await Promise.all([
+        window.db.from('clients').select('*').eq('id', userId).single(),
+        window.db.from('appointment_history').select('*, staff(name), services(name)').eq('client_id', userId).order('visit_date', { ascending: false }),
+        window.db.from('reviews').select('*').eq('client_id', userId),
+        window.db.from('appointments').select('*, staff(name)').eq('client_id', userId).neq('status', 'rejected').order('appointment_date', { ascending: true }),
+        window.db.from('services').select('*').order('name'),
+        window.db.from('staff').select('*').eq('is_active', true),
+        window.db.from('bonus_programs').select('*').eq('is_active', true),
+        window.db.from('bonus_history').select('*').eq('client_id', userId).order('created_at', { ascending: false })
+    ]);
+
+    // Зберігаємо в window для доступу з інших функцій
+    window.allServicesData = services.data;
+    window.userData = client.data;
+
+    // Рендеримо всі три секції в фоні
+    renderProfileSection(client.data, history.data, reviews.data, upcoming.data);
+    renderBookingSection(services.data, masters.data);
+    renderBonusesSection(client.data, bonusPrograms.data, bonusHistory.data, history.data);
+
+    window.updateSidebar('profile');
+});
+
+// --- 3. ПРИКЛАД КОМПАКТНОГО БЛОКУ ЛОЯЛЬНОСТІ (ЗМЕНШЕНО) ---
+function renderProfileSection(client, history, reviews, upcoming) {
+    const container = document.getElementById('section-profile');
+    const firstName = client.full_name.split(' ')[0];
+    
+    // Ранг
+    let tier = { name: 'SILVER', color: 'zinc-400', icon: 'fa-medal' };
+    if (client.ltv >= 15000) tier = { name: 'PLATINUM', color: 'cyan-400', icon: 'fa-gem' };
+    else if (client.ltv >= 5000) tier = { name: 'GOLD', color: 'amber-500', icon: 'fa-crown' };
+
+    container.innerHTML = `
+        <h2 class="text-xl font-black text-white mb-6">Вітаємо, ${firstName}! ✨</h2>
+        
+        <!-- КАРТКА ЛОЯЛЬНОСТІ (ЗМЕНШЕНА) -->
+        <div class="glass-panel p-4 sm:p-6 rounded-[1.5rem] border-t-4 border-t-${tier.color} relative overflow-hidden mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-[8px] text-zinc-500 uppercase font-black tracking-widest">Статус лояльності</p>
+                    <h3 class="text-lg font-black text-${tier.color} uppercase tracking-tighter italic-none">${tier.name}</h3>
+                </div>
+                <i class="fa-solid ${tier.icon} text-${tier.color} text-lg"></i>
+            </div>
+            <div class="mt-4">
+                <p class="text-2xl font-black text-white leading-none">${client.bonuses} <span class="text-[10px] text-zinc-500 font-bold uppercase ml-1">балів</span></p>
+            </div>
+        </div>
+
+        <!-- Решта твого коду профілю (записи, історія) тут... -->
+    `;
+}
