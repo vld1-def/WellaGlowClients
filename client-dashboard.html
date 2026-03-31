@@ -112,6 +112,47 @@
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch; /* для плавності на iPhone */
 }
+        // Додай ці класи в injectGlowStyles() всередині стилів
+const toastStyles = `
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 90%;
+        max-width: 400px;
+        pointer-events: none;
+    }
+    .toast-item {
+        background: rgba(17, 17, 19, 0.8);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 16px 20px;
+        border-radius: 20px;
+        color: white;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        pointer-events: auto;
+        animation: toast-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes toast-in {
+        from { opacity: 0; transform: translateY(-20px) scale(0.9); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .toast-out {
+        animation: toast-out 0.5s forwards;
+    }
+    @keyframes toast-out {
+        from { opacity: 1; transform: scale(1); }
+        to { opacity: 0; transform: scale(0.8); }
+    }
+`;
     </style>
 </head>
 <body class="flex flex-col h-screen bg-[#050505] text-[#e2e8f0] overflow-hidden">
